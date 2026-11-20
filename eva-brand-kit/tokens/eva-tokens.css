@@ -1,0 +1,84 @@
+/* ЕВА — дизайн-токены.
+   Тёмная тема — основная (Лаборатория, страницы). Светлая — для печати и PDF.
+   Подключение: <link rel="stylesheet" href="tokens/eva-tokens.css"> после fonts/fonts.css. */
+
+:root {
+  /* Фирменные */
+  --eva-lime: #C6FF34;        /* главный акцент: кнопки, активное, успех */
+  --eva-blue: #0179FE;        /* второй акцент: ссылки, «система», выбор */
+  --eva-blue-deep: #0157B3;
+  --eva-blue-soft: #6FB0FF;
+  --eva-blue-glow: #2F6BFF;   /* контровая подсветка на фото и иллюстрациях */
+  --eva-graphite: #1E1E1E;    /* «чернила»: текст на лайме, обводки, фон логотипа */
+
+  /* Тёмная тема */
+  --eva-bg: #171717;
+  --eva-panel: #222222;
+  --eva-panel-2: #2B2B2B;
+  --eva-line: #363636;
+  --eva-track: #3D3D3D;
+  --eva-text: #F3F3F3;
+  --eva-text-2: #ABABA7;
+  --eva-text-3: #7F7F7B;
+
+  /* Состояния */
+  --eva-ok: #C6FF34;
+  --eva-warn: #FFB86B;        /* «сомнительно», внимание */
+  --eva-err: #FF7A7A;
+  --eva-purple: #B69CFF;      /* пятый цвет для категорий/подгрупп */
+
+  /* Шрифты: в приложении Serati / Bender (свои файлы), на страницах и в PDF — Unbounded / Exo 2 */
+  --eva-font-display: 'Serati', 'Unbounded', system-ui, sans-serif;
+  --eva-font-body: 'Bender', 'Exo 2', system-ui, sans-serif;
+  --eva-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Форма */
+  --eva-radius-s: 6px;   /* чипы, бейджи, кнопки-плашки */
+  --eva-radius-m: 10px;  /* карточки */
+  --eva-radius-l: 14px;  /* крупные панели, плитки */
+  --eva-gap: 12px;
+  --eva-gutter: 16px;    /* боковой отступ на телефоне */
+
+  /* Движение */
+  --eva-ease-out: cubic-bezier(.2, .8, .3, 1);
+  --eva-ease-spring: cubic-bezier(.36, .07, .19, .97);
+  --eva-dur-fast: 150ms;
+  --eva-dur: 250ms;
+  --eva-dur-slow: 400ms;
+  --eva-loader-cycle: 2.8s;
+  --eva-hover-lift: -4px;
+
+  color-scheme: dark;
+}
+
+/* Светлая печатная тема (PDF A4, распечатки) */
+:root[data-theme="print"], .eva-print {
+  --eva-bg: #FFFFFF;
+  --eva-panel: #F4F4F1;
+  --eva-panel-2: #EAEAE6;
+  --eva-line: #DADAD5;
+  --eva-text: #1E1E1E;
+  --eva-text-2: #45453F;
+  --eva-text-3: #7A7A74;
+  --eva-lime-ink: #4F6E00;   /* лайм нечитаем на белом — для текста берём тёмно-оливковый */
+  --eva-lime-tint: #F3FFD9;  /* подложка «хорошо/сделано» */
+  --eva-blue-tint: #EAF3FF;
+  --eva-warn: #B26200;
+  color-scheme: light;
+}
+
+/* Базовые классы */
+.eva-eyebrow { font: 500 12px/1 var(--eva-font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--eva-lime); }
+.eva-h1 { font: 700 clamp(28px, 4.6vw, 46px)/1.08 var(--eva-font-display); }
+.eva-h2 { font: 500 clamp(22px, 3vw, 30px)/1.2 var(--eva-font-display); }
+.eva-chip { font: 500 11px/1 var(--eva-font-mono); padding: 6px 8px; border-radius: var(--eva-radius-s); background: var(--eva-lime); color: var(--eva-graphite); }
+.eva-card { background: var(--eva-panel); border: 1px solid var(--eva-line); border-radius: var(--eva-radius-m); padding: 16px; }
+.eva-card--hover { transition: transform var(--eva-dur) var(--eva-ease-out), border-color var(--eva-dur); }
+.eva-card--hover:hover { transform: translateY(var(--eva-hover-lift)); border: 2px solid var(--eva-lime); }
+.eva-btn { font: 500 14px/1 var(--eva-font-body); padding: 10px 14px; border-radius: 8px; background: var(--eva-lime); color: var(--eva-graphite); border: 0; }
+.eva-btn--ghost { background: transparent; color: var(--eva-text-2); border: 1px solid var(--eva-line); }
+:focus-visible { outline: 2px solid var(--eva-lime); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

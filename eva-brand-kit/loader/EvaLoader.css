@@ -1,0 +1,153 @@
+/* Анимация загрузки ЕВА.
+   Цикл 2,8 с: буквы-грани разлетаются от центра → весь куб делает оборот по часовой, грани по спирали возвращаются →
+   щелчок сборки: вспышка, кольцо, лаймовые плашки разлетаются и уменьшаются до нуля → короткая пауза → повтор.
+   Анимируются только transform и opacity. При prefers-reduced-motion — статичный логотип с мягкой пульсацией. */
+
+.eva-loader {
+  --eva-size: 160px;
+  --eva-cycle: 2.8s;
+  --eva-lime: #C6FF34;
+  --eva-blue: #0179FE;
+  --eva-text: #F3F3F3;
+  --eva-text-2: #A8A8A8;
+  --eva-track: #3D3D3D;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.eva-loader__stage {
+  position: relative;
+  width: var(--eva-size);
+  height: var(--eva-size);
+}
+
+.eva-loader__stage svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.eva-loader__face { fill: var(--eva-lime); }
+.eva-loader__glow { fill: var(--eva-lime); opacity: 0; }
+.eva-loader__ring { fill: none; stroke: var(--eva-lime); stroke-width: 3; opacity: 0; }
+.eva-loader__bit { fill: var(--eva-lime); opacity: 0; }
+.eva-loader__bit--blue { fill: var(--eva-blue); }
+
+.eva-loader__label {
+  font: 500 14px/1.3 var(--font-ui, 'Bender', system-ui, sans-serif);
+  color: var(--eva-text-2);
+  text-align: center;
+  min-height: 1.3em;
+}
+
+.eva-loader__bar {
+  width: calc(var(--eva-size) * 1.4);
+  height: 3px;
+  border-radius: 2px;
+  background: var(--eva-track);
+  overflow: hidden;
+}
+.eva-loader__bar > i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--eva-lime);
+  transform-origin: left center;
+  transform: scaleX(var(--eva-progress, 0));
+  transition: transform .25s ease-out;
+}
+.eva-loader__bar--indeterminate > i {
+  width: 35%;
+  transform: none;
+}
+
+/* Размеры */
+.eva-loader--splash { --eva-size: 180px; }
+.eva-loader--overlay { --eva-size: 96px; gap: 10px; }
+.eva-loader--inline { --eva-size: 24px; flex-direction: row; gap: 8px; }
+.eva-loader--inline .eva-loader__label { font-size: 12px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Весь куб вращается вокруг центра */
+  .eva-loader:not(.eva-loader--inline) .eva-loader__spin {
+    animation: eva-spin var(--eva-cycle) infinite;
+  }
+  /* Каждая грань улетает вдоль своей стороны и возвращается по спирали */
+  .eva-loader:not(.eva-loader--inline) .eva-loader__fly {
+    animation: eva-fly var(--eva-cycle) infinite;
+  }
+  .eva-loader:not(.eva-loader--inline) .eva-loader__glow {
+    animation: eva-glow var(--eva-cycle) infinite;
+  }
+  .eva-loader:not(.eva-loader--inline) .eva-loader__ring {
+    animation: eva-ring var(--eva-cycle) infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .eva-loader:not(.eva-loader--inline) .eva-loader__bit {
+    animation: eva-bit var(--eva-cycle) infinite;
+  }
+  /* Маленькая версия: грани по очереди по часовой загораются */
+  .eva-loader--inline .eva-loader__fly {
+    animation: eva-pulse 1.2s ease-in-out infinite;
+  }
+  .eva-loader--inline .eva-loader__fly--right { animation-delay: .4s; }
+  .eva-loader--inline .eva-loader__fly--left { animation-delay: .8s; }
+
+  .eva-loader__bar--indeterminate > i { animation: eva-bar 1.4s ease-in-out infinite; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eva-loader__spin { animation: eva-breathe 2.4s ease-in-out infinite; }
+}
+
+@keyframes eva-spin {
+  0%, 20% { transform: rotate(0deg); animation-timing-function: cubic-bezier(.55, 0, .35, 1); }
+  72%, 100% { transform: rotate(360deg); }
+}
+
+@keyframes eva-fly {
+  0%, 6% { transform: translate(0, 0); animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+  20% { transform: translate(calc(var(--dx) * 46px), calc(var(--dy) * 46px)); }
+  46% { transform: translate(calc(var(--dx) * 46px), calc(var(--dy) * 46px)); animation-timing-function: cubic-bezier(.6, 0, .9, .6); }
+  72% { transform: translate(calc(var(--dx) * -5px), calc(var(--dy) * -5px)); animation-timing-function: ease-out; }
+  80%, 100% { transform: translate(0, 0); }
+}
+
+@keyframes eva-glow {
+  0%, 70% { opacity: 0; }
+  75% { opacity: .85; }
+  95%, 100% { opacity: 0; }
+}
+
+@keyframes eva-ring {
+  0%, 71% { opacity: 0; transform: scale(.55); }
+  74% { opacity: .9; }
+  94%, 100% { opacity: 0; transform: scale(1.45); }
+}
+
+@keyframes eva-bit {
+  0%, 71% { opacity: 0; transform: rotate(var(--a)) translateX(30px) rotate(45deg) scale(.4); }
+  74% { opacity: 1; transform: rotate(var(--a)) translateX(60px) rotate(45deg) scale(1); animation-timing-function: cubic-bezier(.15, .8, .3, 1); }
+  96% { opacity: .9; transform: rotate(var(--a)) translateX(var(--r)) rotate(calc(45deg + var(--spin))) scale(0); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--r)) scale(0); }
+}
+
+@keyframes eva-pulse {
+  0%, 100% { opacity: .35; }
+  30% { opacity: 1; }
+}
+
+@keyframes eva-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+
+@keyframes eva-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(290%); }
+}

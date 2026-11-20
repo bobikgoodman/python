@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Керны — каменные цилиндры из скважины">
+  <defs>
+    <filter id="stone" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 0.85" result="a"/>
+      <feComposite in="SourceGraphic" in2="a" operator="in"/>
+    </filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="2" seed="3" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 -0.75"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
+      <stop offset=".35" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".75" stop-color="#000" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </linearGradient>
+    <radialGradient id="face" cx=".45" cy=".4" r=".7">
+      <stop offset="0" stop-color="#fff" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".35"/>
+    </radialGradient>
+    <clipPath id="c1"><rect x="40" y="58" width="470" height="62" rx="4"/></clipPath>
+    <clipPath id="c2"><rect x="90" y="150" width="470" height="62" rx="4"/></clipPath>
+    <clipPath id="c3"><rect x="60" y="242" width="420" height="62" rx="4"/></clipPath>
+  </defs>
+
+  <rect width="640" height="360" fill="#1B1A18"/>
+  <!-- лоток кернового ящика -->
+  <g fill="none" stroke="#3A342C" stroke-width="3">
+    <path d="M24 44 H616 V136 H24 Z M24 136 V228 H616 V136 M24 228 V320 H616 V228"/>
+  </g>
+  <g fill="#000" opacity=".35"><rect x="40" y="118" width="470" height="8" rx="4"/><rect x="90" y="210" width="470" height="8" rx="4"/><rect x="60" y="302" width="420" height="8" rx="4"/></g>
+
+  <!-- керн 1: песчаник с косой слоистостью -->
+  <g clip-path="url(#c1)">
+    <rect x="40" y="58" width="470" height="62" fill="#B89B74"/>
+    <g fill="none" stroke-width="3">
+      <path d="M40 74 C140 66 240 84 340 72 S470 80 510 70" stroke="#9E8058"/>
+      <path d="M40 92 C150 86 230 102 330 90 S460 98 510 92" stroke="#C9AE86"/>
+      <path d="M40 106 C120 102 260 112 380 104 S480 110 510 106" stroke="#8C6F4B"/>
+    </g>
+    <rect x="40" y="58" width="470" height="62" fill="#5a4630" filter="url(#stone)" opacity=".55"/>
+    <rect x="40" y="58" width="470" height="62" fill="#fff" filter="url(#grain)" opacity=".25"/>
+    <rect x="40" y="58" width="470" height="62" fill="url(#shade)"/>
+    <path d="M196 58 L190 80 L199 96 L192 120 M372 58 L378 76 L370 98 L376 120" fill="none" stroke="#1B1A18" stroke-width="3"/>
+  </g>
+  <ellipse cx="510" cy="89" rx="14" ry="31" fill="#C4A880"/>
+  <ellipse cx="510" cy="89" rx="14" ry="31" fill="#5a4630" filter="url(#stone)" opacity=".5"/>
+  <ellipse cx="510" cy="89" rx="14" ry="31" fill="url(#face)"/>
+
+  <!-- керн 2: аргиллит, тёмный, тонкие прослои -->
+  <g clip-path="url(#c2)">
+    <rect x="90" y="150" width="470" height="62" fill="#5E5A55"/>
+    <g fill="none" stroke-width="1.6">
+      <path d="M90 162 H560" stroke="#6F6A63"/><path d="M90 170 H560" stroke="#4A4642"/>
+      <path d="M90 179 C200 177 340 182 560 178" stroke="#7B756C"/><path d="M90 188 H560" stroke="#454240"/>
+      <path d="M90 197 C220 199 360 195 560 198" stroke="#6C665E"/><path d="M90 205 H560" stroke="#3F3C39"/>
+    </g>
+    <rect x="300" y="150" width="70" height="62" fill="#8E8576"/>
+    <rect x="90" y="150" width="470" height="62" fill="#222" filter="url(#stone)" opacity=".5"/>
+    <rect x="90" y="150" width="470" height="62" fill="#fff" filter="url(#grain)" opacity=".18"/>
+    <rect x="90" y="150" width="470" height="62" fill="url(#shade)"/>
+    <path d="M300 150 L296 172 L304 190 L299 212 M370 150 L374 168 L367 192 L372 212" fill="none" stroke="#1B1A18" stroke-width="3"/>
+  </g>
+  <ellipse cx="560" cy="181" rx="14" ry="31" fill="#6A655E"/>
+  <ellipse cx="560" cy="181" rx="14" ry="31" fill="#222" filter="url(#stone)" opacity=".45"/>
+  <ellipse cx="560" cy="181" rx="14" ry="31" fill="url(#face)"/>
+  <!-- выбуренный цилиндрик (место отбора образца) -->
+  <ellipse cx="335" cy="181" rx="11" ry="11" fill="#1B1A18"/><ellipse cx="335" cy="181" rx="11" ry="11" fill="none" stroke="#C6FF34" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- керн 3: известняк светлый с ракушечными пятнами -->
+  <g clip-path="url(#c3)">
+    <rect x="60" y="242" width="420" height="62" fill="#C9C2B2"/>
+    <g fill="#A79E8B" opacity=".8">
+      <ellipse cx="110" cy="262" rx="7" ry="4"/><ellipse cx="160" cy="285" rx="5" ry="3"/><ellipse cx="230" cy="258" rx="6" ry="3"/>
+      <ellipse cx="290" cy="290" rx="8" ry="4"/><ellipse cx="350" cy="266" rx="5" ry="3"/><ellipse cx="420" cy="284" rx="7" ry="4"/>
+    </g>
+    <rect x="60" y="242" width="420" height="62" fill="#4d473d" filter="url(#stone)" opacity=".45"/>
+    <rect x="60" y="242" width="420" height="62" fill="#fff" filter="url(#grain)" opacity=".25"/>
+    <rect x="60" y="242" width="420" height="62" fill="url(#shade)"/>
+    <path d="M250 242 L256 262 L248 284 L254 304" fill="none" stroke="#1B1A18" stroke-width="3"/>
+  </g>
+  <ellipse cx="480" cy="273" rx="14" ry="31" fill="#D3CCBC"/>
+  <ellipse cx="480" cy="273" rx="14" ry="31" fill="#4d473d" filter="url(#stone)" opacity=".4"/>
+  <ellipse cx="480" cy="273" rx="14" ry="31" fill="url(#face)"/>
+
+  <!-- торец крупно: «шайба» керна -->
+  <g transform="translate(560 286)">
+    <circle r="44" fill="#B89B74"/>
+    <circle r="44" fill="#5a4630" filter="url(#stone)" opacity=".55"/>
+    <path d="M-44 -6 C-20 -14 10 2 44 -8 M-43 12 C-10 4 18 20 42 10" fill="none" stroke="#8C6F4B" stroke-width="3"/>
+    <circle r="44" fill="url(#face)"/>
+    <circle r="44" fill="none" stroke="#2A2620" stroke-width="3"/>
+  </g>
+
+  <!-- бирки с метками глубины -->
+  <g font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" font-weight="500">
+    <g transform="translate(40 34)"><rect width="84" height="18" rx="3" fill="#C6FF34"/><text x="8" y="13" fill="#1E1E1E">1447,65 м</text></g>
+    <g transform="translate(90 126)"><rect width="84" height="18" rx="3" fill="#F3F3F3"/><text x="8" y="13" fill="#1E1E1E">1448,40 м</text></g>
+    <g transform="translate(60 218)"><rect width="84" height="18" rx="3" fill="#F3F3F3"/><text x="8" y="13" fill="#1E1E1E">1449,15 м</text></g>
+  </g>
+</svg>

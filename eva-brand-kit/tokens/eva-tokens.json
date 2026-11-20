@@ -1,0 +1,62 @@
+{
+  "brand": {
+    "lime": "#C6FF34",
+    "blue": "#0179FE",
+    "blueDeep": "#0157B3",
+    "blueSoft": "#6FB0FF",
+    "blueGlow": "#2F6BFF",
+    "graphite": "#1E1E1E"
+  },
+  "dark": {
+    "bg": "#171717",
+    "panel": "#222222",
+    "panel2": "#2B2B2B",
+    "line": "#363636",
+    "track": "#3D3D3D",
+    "text": "#F3F3F3",
+    "text2": "#ABABA7",
+    "text3": "#7F7F7B"
+  },
+  "print": {
+    "bg": "#FFFFFF",
+    "panel": "#F4F4F1",
+    "panel2": "#EAEAE6",
+    "line": "#DADAD5",
+    "text": "#1E1E1E",
+    "text2": "#45453F",
+    "text3": "#7A7A74",
+    "limeInk": "#4F6E00",
+    "limeTint": "#F3FFD9",
+    "blueTint": "#EAF3FF",
+    "warn": "#B26200"
+  },
+  "state": {
+    "ok": "#C6FF34",
+    "warn": "#FFB86B",
+    "err": "#FF7A7A",
+    "purple": "#B69CFF"
+  },
+  "stone": {
+    "sandstone": "#B89B74",
+    "mudstone": "#5E5A55",
+    "limestone": "#C9C2B2",
+    "coreBg": "#1B1A18"
+  },
+  "fonts": {
+    "display": ["Serati", "Unbounded"],
+    "body": ["Bender", "Exo 2"],
+    "mono": ["JetBrains Mono"]
+  },
+  "radius": { "s": 6, "m": 10, "l": 14 },
+  "motion": {
+    "easeOut": "cubic-bezier(.2,.8,.3,1)",
+    "easeSpring": "cubic-bezier(.36,.07,.19,.97)",
+    "fast": 150,
+    "base": 250,
+    "slow": 400,
+    "loaderCycle": 2800,
+    "loaderShowAfter": 300,
+    "loaderMinVisible": 800,
+    "headShake": 550
+  }
+}

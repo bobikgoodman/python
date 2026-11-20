@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ЕВА · Python</title>
+  <link rel="icon" href="eva-brand-kit/logo/eva-logo-app-icon.svg">
+  <link rel="stylesheet" href="eva-brand-kit/fonts/fonts.css">
+  <link rel="stylesheet" href="eva-brand-kit/tokens/eva-tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--eva-bg); color: var(--eva-text); font: 16px var(--eva-font-body); }
+    button, select { font: inherit; color: inherit; }
+    button, select { background: var(--eva-panel-2); border: 1px solid var(--eva-line); border-radius: 8px; padding: 8px 12px; }
+    button { cursor: pointer; white-space: nowrap; }
+    button:hover:not(:disabled) { border-color: var(--eva-lime); }
+    button:disabled { opacity: .45; cursor: default; }
+    .primary { background: var(--eva-lime); color: var(--eva-graphite); font-weight: 600; }
+    header { padding: 14px clamp(14px, 3vw, 44px); background: var(--eva-panel); border-bottom: 1px solid var(--eva-line); }
+    header, .bar, .actions, .tab, footer { display: flex; align-items: center; gap: 8px; }
+    header, .bar { justify-content: space-between; flex-wrap: wrap; }
+    header img { width: 46px; height: 46px; }
+    h1 { font: 500 clamp(17px, 3vw, 24px) var(--eva-font-display); margin: 0; }
+    h2 { font: 500 13px var(--eva-font-mono); margin: 0; }
+    .actions { flex-wrap: wrap; }
+    main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px; padding: 14px clamp(14px, 3vw, 44px); min-height: calc(100dvh - 112px); }
+    .workspace { display: grid; grid-template-rows: minmax(340px, 2fr) minmax(210px, 1fr); gap: 12px; min-width: 0; }
+    .panel { background: var(--eva-panel); border: 1px solid var(--eva-line); border-radius: var(--eva-radius-l); min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .bar { min-height: 51px; padding: 8px 12px; border-bottom: 1px solid var(--eva-line); }
+    .tabs { display: flex; overflow-x: auto; gap: 4px; padding: 6px; border-bottom: 1px solid var(--eva-line); }
+    .tab { flex: none; border: 1px solid transparent; border-radius: 8px; gap: 0; }
+    .tab.active { background: var(--eva-bg); border-color: var(--eva-line); box-shadow: inset 0 -2px var(--eva-lime); }
+    .tab button { background: transparent; border-color: transparent; font: 12px var(--eva-font-mono); }
+    .tab .close { padding-inline: 8px; color: var(--eva-text-2); }
+    textarea { color: var(--eva-text); background: var(--eva-bg); border: 0; resize: none; font: 14px/1.65 var(--eva-font-mono); tab-size: 4; }
+    #editor { flex: 1; min-height: 200px; padding: 14px; outline-offset: -2px; }
+    .output { flex: 1; min-height: 80px; height: 0; overflow: auto; background: var(--eva-bg); padding: 12px; font: 13px/1.6 var(--eva-font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .error { color: var(--eva-err); }
+    .muted { color: var(--eva-text-2); }
+    details { padding: 7px 12px; border-top: 1px solid var(--eva-line); }
+    summary { cursor: pointer; color: var(--eva-text-2); }
+    details textarea { display: block; width: 100%; margin-top: 6px; padding: 8px; border-radius: 6px; }
+    .pdf-body { flex: 1; position: relative; min-height: 400px; display: grid; place-items: center; background: radial-gradient(ellipse at center, #22282e, var(--eva-bg) 72%); text-align: center; padding: 16px; }
+    .pdf-body img { width: 72px; margin-bottom: 12px; }
+    .pdf-body p { margin: 0 0 14px; }
+    .pdf-tools { justify-content: center; }
+    #pdf-page { width: 4.5em; padding: 6px; border: 1px solid var(--eva-line); border-radius: 6px; background: var(--eva-bg); color: inherit; font: inherit; }
+    #pdf-view { position: absolute; inset: 0; overflow: auto; scrollbar-gutter: stable; }
+    #pdf-view canvas { display: block; margin-inline: auto; background: white; }
+    #pdf-message { position: absolute; z-index: 1; top: 12px; left: 12px; right: 12px; padding: 10px; border-radius: 8px; background: var(--eva-panel); }
+    #pdf-name { overflow-wrap: anywhere; }
+    footer { padding: 0 clamp(14px, 3vw, 44px) 12px; font: 12px var(--eva-font-mono); color: var(--eva-text-2); justify-content: space-between; }
+    dialog { max-width: min(480px, calc(100% - 32px)); background: var(--eva-panel); color: var(--eva-text); border: 1px solid var(--eva-line); border-radius: 14px; padding: 20px; }
+    dialog::backdrop { background: #000a; }
+    [hidden] { display: none !important; }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; } .pdf-body { min-height: 65vh; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="actions"><img src="eva-brand-kit/logo/eva-logo-lime.svg" alt=""><h1>ЕВА · Python</h1></div>
+    <div class="actions"><button id="help">Подсказки</button><button id="stop" disabled>■ Стоп</button><button id="run" class="primary" title="Ctrl+Enter">▶ Запустить</button></div>
+  </header>
+  <main>
+    <div class="workspace">
+      <section class="panel" aria-label="Редактор Python">
+        <div class="bar">
+          <div class="actions"><button id="new">+ Файл</button><button id="open">Открыть .py</button><button id="save" title="Ctrl+S">Скачать .py</button></div>
+          <select id="snippets" aria-label="Вставить пример кода">
+            <option value="">Вставить пример</option><option value="print">Вывод</option><option value="input">Ввод</option><option value="loop">Цикл</option><option value="function">Функция</option>
+          </select>
+        </div>
+        <div class="tabs" id="tabs" aria-label="Открытые файлы"></div>
+        <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Код Python" wrap="off"></textarea>
+      </section>
+      <section class="panel" aria-labelledby="output-title">
+        <div class="bar"><h2 id="output-title">Консоль</h2><div class="actions"><button id="save-log">Скачать лог</button><button id="clear">Очистить</button></div></div>
+        <div class="output" id="output" tabindex="0" aria-label="Вывод программы"><span class="muted">Запустите открытый файл, чтобы увидеть результат.</span></div>
+        <details><summary>Ввод для input()</summary><textarea id="stdin" rows="2" aria-label="Ввод для программы" placeholder="По одному ответу на строку"></textarea></details>
+      </section>
+    </div>
+    <section class="panel" aria-labelledby="pdf-title">
+      <div class="bar"><h2 id="pdf-title">PDF <span id="pdf-name" class="muted"></span></h2><div class="actions"><button id="open-pdf">Открыть PDF</button><button id="close-pdf" hidden>Закрыть</button></div></div>
+      <div class="bar actions pdf-tools" id="pdf-tools" hidden>
+        <button id="pdf-prev" aria-label="Предыдущая страница">←</button>
+        <form id="pdf-jump" novalidate><input id="pdf-page" type="number" min="1" aria-label="Номер страницы"><span id="pdf-total"></span></form>
+        <button id="pdf-next" aria-label="Следующая страница">→</button>
+        <button id="pdf-minus" aria-label="Уменьшить">−</button>
+        <button id="pdf-fit">По ширине</button>
+        <button id="pdf-plus" aria-label="Увеличить">+</button>
+      </div>
+      <div class="pdf-body">
+        <div id="pdf-empty"><img src="eva-brand-kit/logo/eva-logo-blue.svg" alt=""><p class="muted">Откройте задание или методичку рядом с кодом.</p><button id="pick-pdf">Выбрать PDF</button></div>
+        <div id="pdf-view" tabindex="0" aria-label="Страница PDF" hidden></div>
+        <div id="pdf-message" role="status" hidden></div>
+      </div>
+    </section>
+  </main>
+  <footer><span id="status" role="status">Python готов к загрузке</span><span id="storage-status" role="status"></span><span id="position"></span></footer>
+  <input id="py-files" type="file" accept=".py" multiple hidden>
+  <input id="pdf-file" type="file" accept=".pdf,application/pdf" hidden>
+  <dialog id="tips">
+    <form method="dialog">
+      <h2>Подсказки</h2>
+      <ul>
+        <li><kbd>Ctrl+Enter</kbd> запускает текущий файл, <kbd>Ctrl+S</kbd> скачивает его.</li>
+        <li><kbd>Tab</kbd> вставляет четыре пробела. Чтобы выйти из редактора, нажмите <kbd>Esc</kbd>, затем <kbd>Tab</kbd>.</li>
+        <li>Чтобы использовать <code>input()</code>, заранее впишите ответы в поле под консолью.</li>
+        <li>Открытые файлы лежат в одной рабочей папке Python. Из <code>helpers.py</code> можно импортировать через <code>import helpers</code>.</li>
+        <li>Стандартная библиотека Python доступна сразу после загрузки. Поддерживаемые Pyodide пакеты загружаются из интернета по импорту.</li>
+        <li>Вкладки, код, ввод и журнал сохраняются в этом браузере. Кнопка «Скачать .py» создаёт отдельный файл.</li>
+        <li>Запуск ограничен двумя минутами. Долгую программу можно остановить кнопкой «Стоп».</li>
+      </ul>
+      <button class="primary">Закрыть</button>
+    </form>
+  </dialog>
+  <script>
+    const $ = id => document.getElementById(id);
+    const editor = $('editor');
+    const output = $('output');
+    const storageKey = 'eva-python-workspace-v1';
+    const maxLogSize = 180000;
+    const maxLogEntries = 2000;
+    let restored;
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      if (Array.isArray(saved?.files) && saved.files.every(file => typeof file?.name === 'string' && typeof file.code === 'string')) restored = saved;
+    } catch { /* A fresh workspace remains usable when storage is unavailable. */ }
+    const files = restored?.files ?? [{ name: 'main.py', code: 'print("Привет от ЕВА!")\n', start: 0, end: 0, dirty: false }];
+    let active = files.find(file => file.name === restored?.active) ?? files[0] ?? null;
+    const pdfBase = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
+    const pdfView = $('pdf-view');
+    let pdfSession;
+    let worker;
+    let busy = false;
+    let allowTabExit = false;
+    let log = [];
+    let logSize = 0;
+    let saveTimer;
+    let runTimer;
+    let storageFailed = false;
+
+    function persist() {
+      clearTimeout(saveTimer);
+      saveTimer = undefined;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ files, active: active?.name, stdin: $('stdin').value, log, busy }));
+        storageFailed = false;
+        $('storage-status').textContent = 'Автосохранение включено';
+      } catch {
+        storageFailed = true;
+        $('storage-status').textContent = 'Автосохранение недоступно · скачайте файлы и лог';
+      }
+    }
+
+    function scheduleSave() {
+      if (saveTimer === undefined) saveTimer = setTimeout(persist, 250);
+    }
+
+    function renderTabs() {
+      const tabs = $('tabs');
+      const scroll = tabs.scrollLeft;
+      tabs.replaceChildren();
+      for (const file of files) {
+        const tab = document.createElement('div');
+        tab.className = file === active ? 'tab active' : 'tab';
+        const select = document.createElement('button');
+        select.textContent = file.name + (file.dirty ? ' •' : '');
+        select.setAttribute('aria-pressed', file === active);
+        select.onclick = () => activate(file, true);
+        const close = document.createElement('button');
+        close.className = 'close';
+        close.textContent = '×';
+        close.setAttribute('aria-label', `Закрыть ${file.name}`);
+        close.onclick = () => {
+          if (file.dirty && !confirm(`Закрыть ${file.name} без скачивания изменений?`)) return;
+          const index = files.indexOf(file);
+          files.splice(index, 1);
+          if (active === file) activate(files[index] || files[index - 1] || null, true);
+          else { renderTabs(); tabs.querySelector('.active button')?.focus(); persist(); }
+        };
+        tab.append(select, close);
+        tabs.append(tab);
+      }
+      tabs.scrollLeft = scroll;
+      tabs.querySelector('.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+
+    function updatePosition() {
+      if (!active) { $('position').textContent = ''; return; }
+      active.start = editor.selectionStart;
+      active.end = editor.selectionEnd;
+      const before = editor.value.slice(0, active.start).split('\n');
+      $('position').textContent = `Строка ${before.length} · Столбец ${before.at(-1).length + 1}`;
+    }
+
+    function activate(file, focus = false) {
+      active = file;
+      editor.disabled = !file;
+      $('snippets').disabled = !file;
+      $('save').disabled = !file;
+      $('run').disabled = !file || busy;
+      editor.value = file?.code ?? '';
+      editor.setSelectionRange(file?.start ?? 0, file?.end ?? 0);
+      editor.scrollTop = 0;
+      editor.scrollLeft = 0;
+      renderTabs();
+      updatePosition();
+      if (focus) (file ? editor : $('new')).focus();
+      persist();
+    }
+
+    function addFile(name, code = '', dirty = false) {
+      const stem = name.slice(0, -3);
+      let candidate = name;
+      for (let suffix = 2; files.some(file => file.name === candidate); suffix++) candidate = `${stem}_${suffix}.py`;
+      const file = { name: candidate, code, start: 0, end: 0, dirty };
+      files.push(file);
+      return file;
+    }
+
+    $('new').onclick = () => {
+      const name = prompt('Имя Python-файла', 'untitled.py')?.trim();
+      if (!name) return;
+      if (/[<>:"/\\|?*\x00-\x1f]/.test(name)) { alert('Введите имя файла без пути и специальных символов.'); return; }
+      activate(addFile(name.replace(/\.py$/i, '') + '.py', '', true), true);
+    };
+    $('open').onclick = () => $('py-files').click();
+    $('py-files').onchange = async event => {
+      const selected = [...event.target.files];
+      event.target.value = '';
+      let lastOpened;
+      const failed = [];
+      for (const file of selected) {
+        if (!/\.py$/i.test(file.name)) { failed.push(file.name); continue; }
+        try { lastOpened = addFile(file.name.replace(/\.py$/i, '.py'), await file.text()); }
+        catch { failed.push(file.name); }
+      }
+      if (lastOpened) activate(lastOpened, true);
+      if (failed.length) alert(`Не удалось открыть: ${failed.join(', ')}`);
+    };
+
+    function download(name, content, type) {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(new Blob([content], { type }));
+      link.href = url;
+      link.download = name;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function save() {
+      if (!active) return;
+      download(active.name, active.code, 'text/x-python;charset=utf-8');
+      active.dirty = false;
+      renderTabs();
+      persist();
+    }
+    $('save').onclick = save;
+
+    editor.addEventListener('input', () => {
+      active.code = editor.value;
+      if (!active.dirty) { active.dirty = true; renderTabs(); }
+      updatePosition();
+      scheduleSave();
+    });
+    $('stdin').addEventListener('input', scheduleSave);
+    document.addEventListener('selectionchange', () => { if (document.activeElement === editor) updatePosition(); });
+    editor.addEventListener('blur', () => { allowTabExit = false; });
+    function insertCode(text) {
+      if (!document.execCommand('insertText', false, text)) {
+        editor.setRangeText(text, editor.selectionStart, editor.selectionEnd, 'end');
+        editor.dispatchEvent(new Event('input'));
+      }
+    }
+    editor.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { allowTabExit = true; return; }
+      if (event.key === 'Tab' && !event.shiftKey && !allowTabExit) {
+        event.preventDefault();
+        insertCode('    ');
+      }
+      if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.isComposing) {
+        const line = editor.value.slice(0, editor.selectionStart).split('\n').at(-1);
+        const indent = line.match(/^\s*/)[0] + (line.trimEnd().endsWith(':') ? '    ' : '');
+        if (indent) { event.preventDefault(); insertCode('\n' + indent); }
+      }
+      if (event.key !== 'Shift') allowTabExit = false;
+    });
+    $('snippets').onchange = event => {
+      const snippets = { print: 'print("Привет!")', input: 'name = input("Как вас зовут? ")\nprint(f"Привет, {name}!")', loop: 'for i in range(5):\n    print(i)', function: 'def greet(name):\n    return f"Привет, {name}!"\n\nprint(greet("ЕВА"))' };
+      const text = snippets[event.target.value];
+      if (text) { editor.focus(); insertCode(text); }
+      event.target.value = '';
+    };
+
+    function pdfMessage(text) {
+      $('pdf-message').textContent = text;
+      $('pdf-message').hidden = !text;
+    }
+
+    function releasePdf() {
+      const session = pdfSession;
+      pdfSession = undefined;
+      session?.render?.cancel();
+      session?.loading?.destroy().catch(() => {});
+      pdfView.replaceChildren();
+      pdfMessage('');
+    }
+
+    async function drawPdf(resetScroll = false) {
+      const session = pdfSession;
+      if (!session?.document) return;
+      session.render?.cancel();
+      if (resetScroll) pdfView.scrollTo(0, 0);
+      const revision = ++session.revision;
+      const current = () => session === pdfSession && revision === session.revision;
+      const { page, zoom } = session;
+      $('pdf-page').value = page;
+      $('pdf-prev').disabled = page === 1;
+      $('pdf-next').disabled = page === session.document.numPages;
+      $('pdf-minus').disabled = zoom <= 0.75;
+      $('pdf-plus').disabled = zoom >= 3;
+      $('pdf-fit').textContent = zoom === 1 ? 'По ширине' : `${Math.round(zoom * 100)}% по ширине`;
+      pdfMessage('');
+      try {
+        const sheet = await session.document.getPage(page);
+        if (!current()) return;
+        const natural = sheet.getViewport({ scale: 1 });
+        // Reserve space for the vertical scrollbar even before the first page is painted.
+        const width = Math.max(1, pdfView.clientWidth);
+        const viewport = sheet.getViewport({ scale: width / natural.width * zoom });
+        const density = Math.min(window.devicePixelRatio || 1, 2, 8192 / Math.max(viewport.width, viewport.height));
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('aria-label', `Страница ${page} из ${session.document.numPages}`);
+        canvas.width = Math.max(1, Math.floor(viewport.width * density));
+        canvas.height = Math.max(1, Math.floor(viewport.height * density));
+        canvas.style.width = `${Math.floor(viewport.width)}px`;
+        canvas.style.height = `${Math.floor(viewport.height)}px`;
+        session.render = sheet.render({ canvasContext: canvas.getContext('2d'), viewport, transform: [density, 0, 0, density, 0, 0] });
+        await session.render.promise;
+        if (current()) {
+          const { scrollTop, scrollLeft } = pdfView;
+          pdfView.replaceChildren(canvas);
+          pdfView.scrollTo(resetScroll ? 0 : scrollLeft, resetScroll ? 0 : scrollTop);
+        }
+      } catch {
+        if (current()) {
+          pdfView.replaceChildren();
+          pdfMessage('Не удалось отобразить страницу PDF.');
+        }
+      }
+    }
+
+    $('open-pdf').onclick = $('pick-pdf').onclick = () => $('pdf-file').click();
+    $('pdf-file').onchange = async event => {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      if (!/\.pdf$/i.test(file.name)) { alert('Выберите файл с расширением .pdf.'); return; }
+      releasePdf();
+      const session = { page: 1, zoom: 1, revision: 0 };
+      pdfSession = session;
+      pdfView.hidden = $('close-pdf').hidden = false;
+      $('pdf-empty').hidden = $('pdf-tools').hidden = true;
+      $('pdf-name').textContent = `· ${file.name}`;
+      pdfMessage('Открываем PDF…');
+      try {
+        const [pdf, bytes] = await Promise.all([import(pdfBase + 'build/pdf.min.mjs'), file.arrayBuffer()]);
+        if (session !== pdfSession) return;
+        pdf.GlobalWorkerOptions.workerSrc = pdfBase + 'build/pdf.worker.min.mjs';
+        session.loading = pdf.getDocument({ data: bytes, cMapUrl: pdfBase + 'cmaps/', cMapPacked: true, standardFontDataUrl: pdfBase + 'standard_fonts/' });
+        const document = await session.loading.promise;
+        if (session !== pdfSession) return;
+        session.document = document;
+        $('pdf-page').max = document.numPages;
+        $('pdf-total').textContent = ` / ${document.numPages}`;
+        $('pdf-tools').hidden = false;
+        drawPdf(true);
+      } catch {
+        if (session === pdfSession) pdfMessage('Не удалось открыть PDF. Проверьте файл и подключение к интернету.');
+      }
+    };
+    $('close-pdf').onclick = () => {
+      releasePdf();
+      pdfView.hidden = $('close-pdf').hidden = $('pdf-tools').hidden = true;
+      $('pdf-empty').hidden = false;
+      $('pdf-name').textContent = '';
+      $('open-pdf').focus();
+    };
+    function showPdfPage(page) {
+      if (!pdfSession?.document) return;
+      pdfSession.page = Math.min(pdfSession.document.numPages, Math.max(1, Math.trunc(page) || pdfSession.page));
+      drawPdf(true);
+    }
+    $('pdf-prev').onclick = () => showPdfPage(pdfSession.page - 1);
+    $('pdf-next').onclick = () => showPdfPage(pdfSession.page + 1);
+    $('pdf-jump').onsubmit = event => { event.preventDefault(); showPdfPage($('pdf-page').valueAsNumber); };
+    function setPdfZoom(zoom) {
+      pdfSession.zoom = Math.min(3, Math.max(0.75, zoom));
+      drawPdf();
+    }
+    $('pdf-plus').onclick = () => setPdfZoom(pdfSession.zoom + 0.25);
+    $('pdf-minus').onclick = () => setPdfZoom(pdfSession.zoom - 0.25);
+    $('pdf-fit').onclick = () => setPdfZoom(1);
+    pdfView.onkeydown = event => {
+      if (!pdfSession?.document || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+      event.preventDefault();
+      showPdfPage(pdfSession.page + (event.key === 'ArrowRight' ? 1 : -1));
+    };
+    new ResizeObserver(() => drawPdf()).observe(pdfView);
+
+    function pythonWorker() {
+      const base = 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/';
+      const send = (type, message) => self.postMessage({ type, message });
+      let runtime;
+      self.onmessage = async ({ data }) => {
+        const { name, sources, stdin } = data;
+        const answers = stdin ? stdin.replace(/\r\n/g, '\n').split('\n') : [];
+        let line = 0;
+        let outputCount = 0;
+        let outputSize = 0;
+        function stream(type, value) {
+          if (outputCount >= 1000 || outputSize >= 120000) return;
+          const text = value.slice(0, Math.min(4000, 120000 - outputSize));
+          outputCount++;
+          outputSize += text.length;
+          send(type, text);
+          if (outputCount === 1000 || outputSize === 120000) send('notice', 'Достигнут лимит вывода за запуск.');
+        }
+        try {
+          if (!runtime) {
+            send('status', 'Загрузка Python…');
+            importScripts(base + 'pyodide.js');
+            runtime = await loadPyodide({ indexURL: base });
+          }
+          runtime.setStdout({ batched: value => stream('text', value) });
+          runtime.setStderr({ batched: value => stream('error', value) });
+          runtime.setStdin({ stdin: () => answers[line++] ?? null });
+          runtime.runPython(`
+import importlib, os, runpy, shutil, sys
+os.chdir('/')
+for module_name, module in list(sys.modules.items()):
+    if str(getattr(module, '__file__', '')).startswith('/eva-workspace/'):
+        sys.modules.pop(module_name, None)
+shutil.rmtree('/eva-workspace', ignore_errors=True)
+os.mkdir('/eva-workspace')
+os.chdir('/eva-workspace')
+if '/eva-workspace' not in sys.path:
+    sys.path.insert(0, '/eva-workspace')
+sys.path_importer_cache.pop('/eva-workspace', None)
+importlib.invalidate_caches()
+`);
+          for (const file of sources) runtime.FS.writeFile('/eva-workspace/' + file.name, file.code);
+          send('status', 'Подготовка библиотек…');
+          for (const file of sources) {
+            try { await runtime.loadPackagesFromImports(file.code); }
+            catch (error) {
+              if (file.name === name || !String(error).includes('SyntaxError:')) throw error;
+            }
+          }
+          send('status', `Выполняется ${name}…`);
+          const launchGlobals = runtime.runPython('dict()');
+          try {
+            launchGlobals.set('script_path', '/eva-workspace/' + name);
+            runtime.runPython('import runpy\nrunpy.run_path(script_path, run_name="__main__");', { globals: launchGlobals });
+          } finally { launchGlobals.destroy(); }
+          send('done', 'Выполнено');
+        } catch (error) {
+          send('error', String(error));
+          send('done', 'Ошибка запуска');
+        }
+      };
+    }
+
+    function writeOutput(message, style = '') {
+      const text = message.slice(0, 4000);
+      log.push({ text, style });
+      logSize += text.length;
+      while (log.length > maxLogEntries || logSize > maxLogSize) {
+        logSize -= log.shift().text.length;
+        output.firstElementChild?.remove();
+      }
+      const line = document.createElement('div');
+      line.className = style;
+      line.textContent = text || '\u00a0';
+      output.append(line);
+      output.scrollTop = output.scrollHeight;
+      scheduleSave();
+    }
+
+    function setBusy(value, status) {
+      busy = value;
+      $('status').textContent = status;
+      $('run').disabled = busy || !active;
+      $('stop').disabled = !busy;
+      if (!busy) clearTimeout(runTimer);
+      persist();
+    }
+
+    function stopRun(message, status, style = 'muted') {
+      if (!busy) return;
+      worker?.terminate();
+      worker = undefined;
+      writeOutput(message, style);
+      setBusy(false, status);
+    }
+
+    function run() {
+      if (busy || !active) return;
+      if (log.length === 0) output.replaceChildren();
+      writeOutput(`▶ ${new Date().toLocaleString('ru-RU')} · ${active.name}`, 'muted');
+      setBusy(true, 'Подготовка Python…');
+      runTimer = setTimeout(() => stopRun('Запуск остановлен по тайм-ауту (2 минуты).', 'Тайм-аут', 'error'), 120000);
+      try {
+        if (!worker) {
+          const url = URL.createObjectURL(new Blob([`(${pythonWorker.toString()})();`], { type: 'text/javascript' }));
+          try { worker = new Worker(url); }
+          finally { URL.revokeObjectURL(url); }
+          const runningWorker = worker;
+          worker.onmessage = ({ data: { type, message } }) => {
+            if (worker !== runningWorker || !busy || typeof message !== 'string') return;
+            if (type === 'done') {
+              writeOutput(message, 'muted');
+              setBusy(false, message);
+            }
+            else if (type === 'status') $('status').textContent = message;
+            else writeOutput(message, type === 'error' ? 'error' : type === 'notice' ? 'muted' : '');
+          };
+          worker.onerror = event => {
+            event.preventDefault();
+            if (worker === runningWorker) stopRun(event.message || 'Сбой среды Python.', 'Сбой Python', 'error');
+          };
+          worker.onmessageerror = () => {
+            if (worker === runningWorker) stopRun('Не удалось получить результат от Python.', 'Сбой Python', 'error');
+          };
+        }
+        worker.postMessage({ name: active.name, sources: files.map(({ name, code }) => ({ name, code })), stdin: $('stdin').value });
+      } catch (error) {
+        stopRun(String(error), 'Ошибка запуска', 'error');
+      }
+    }
+    $('run').onclick = run;
+    $('stop').onclick = () => stopRun('Выполнение остановлено.', 'Остановлено');
+    $('clear').onclick = () => {
+      log = [];
+      logSize = 0;
+      output.replaceChildren();
+      persist();
+    };
+    $('save-log').onclick = () => {
+      if (log.length) download('eva-python.log', log.map(entry => entry.text).join('\n') + '\n', 'text/plain;charset=utf-8');
+    };
+    $('help').onclick = () => $('tips').showModal();
+    document.addEventListener('keydown', event => {
+      if ((!event.ctrlKey && !event.metaKey) || $('tips').open) return;
+      if (event.key.toLowerCase() === 's') { event.preventDefault(); save(); }
+      if (event.key === 'Enter') { event.preventDefault(); run(); }
+    });
+    window.addEventListener('beforeunload', event => {
+      persist();
+      if (storageFailed && files.some(file => file.dirty)) { event.preventDefault(); event.returnValue = ''; }
+    });
+    window.addEventListener('pagehide', persist);
+    if (typeof restored?.stdin === 'string') $('stdin').value = restored.stdin;
+    if (Array.isArray(restored?.log) && restored.log.length) {
+      output.replaceChildren();
+      for (const entry of restored.log.slice(-maxLogEntries)) {
+        if (typeof entry?.text === 'string') writeOutput(entry.text, entry.style === 'error' || entry.style === 'muted' ? entry.style : '');
+      }
+    }
+    if (restored?.busy) {
+      if (log.length === 0) output.replaceChildren();
+      writeOutput('Предыдущий запуск прервался при закрытии или сбое страницы.', 'muted');
+      $('status').textContent = 'Предыдущий запуск прерван';
+    }
+    activate(active);
+  </script>
+</body>
+</html>

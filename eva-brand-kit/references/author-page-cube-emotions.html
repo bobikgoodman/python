@@ -1,0 +1,417 @@
+<title>Владислав Ермолаев</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Exo+2:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Раскладка: слева история автора по разделам, справа «прилипший» кубик ЕВА, который меняет эмоцию, когда раздел доходит до центра экрана.
+   Тёмная графитовая тема Лаборатории — намеренно одна, как в самом приложении. В приложении шрифт Bender заменит Exo 2. */
+:root {
+  --bg: #1A1A1A;
+  --panel: #242424;
+  --line: #353535;
+  --text: #F3F3F3;
+  --text-2: #A9A9A6;
+  --text-3: #7E7E7A;
+  --blue: #0179FE;
+  --blue-deep: #0157B3;
+  --blue-soft: #6FB0FF;
+  --lime: #C6FF34;
+  --ink: #1E1E1E;
+  --font-display: 'Unbounded', 'Bender', system-ui, sans-serif;
+  --font-body: 'Exo 2', 'Bender', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 400 17px/1.65 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 48px;
+  padding-block: 56px 96px;
+}
+.story { min-width: 0; max-width: 640px; }
+.eyebrow {
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+h1 {
+  font: 700 clamp(34px, 5vw, 52px)/1.05 var(--font-display);
+  margin: 14px 0 20px;
+  text-wrap: balance;
+}
+h1 .hl { color: var(--blue-soft); }
+h2 {
+  font: 500 22px/1.25 var(--font-display);
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+p { margin: 0 0 14px; }
+.lead { font-size: 19px; color: var(--text); }
+.section {
+  padding-block: 40px;
+  border-top: 1px solid var(--line);
+  min-height: 52vh;
+  transition: opacity .4s;
+}
+.section:first-child { border-top: 0; padding-top: 0; min-height: 0; }
+.section.dim { opacity: .55; }
+.section .tag {
+  display: inline-block;
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 16px; padding: 0; list-style: none; }
+.facts li {
+  font: 500 13px/1 var(--font-mono);
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text-2);
+}
+.facts li b { color: var(--lime); font-weight: 500; }
+ul.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+ul.list li { padding-left: 22px; position: relative; }
+ul.list li::before {
+  content: ""; position: absolute; left: 0; top: .62em;
+  width: 10px; height: 10px; background: var(--blue); transform: rotate(45deg) scale(.7);
+}
+.skills { display: grid; gap: 14px; }
+.skill-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.skill-row dt { font: 500 12px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); }
+.skill-row dd { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font: 500 13px/1 var(--font-mono);
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+}
+.chip.lime { background: var(--lime); color: var(--ink); }
+.quote {
+  font: 500 20px/1.45 var(--font-display);
+  color: var(--text);
+  border-left: 3px solid var(--lime);
+  padding-left: 18px;
+  margin: 8px 0 0;
+}
+.contacts { display: grid; gap: 10px; margin-top: 6px; }
+.contact {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; background: var(--panel); border-radius: 10px;
+}
+.contact .k { font: 500 12px/1 var(--font-mono); color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; width: 78px; }
+.contact .v { font: 500 16px/1.3 var(--font-mono); color: var(--text); user-select: all; min-width: 0; overflow-wrap: anywhere; }
+.contact a.v { color: var(--blue-soft); text-decoration: none; }
+.contact a.v:hover { text-decoration: underline; }
+.copy {
+  margin-left: auto;
+  font: 500 12px/1 var(--font-body);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.copy:hover { border-color: var(--blue); color: var(--text); }
+.copy:focus-visible, a:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
+/* Кубик */
+.buddy-col { position: relative; }
+.buddy {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 80px);
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.bubble {
+  position: relative;
+  min-height: 52px;
+  max-width: 280px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--text);
+  color: var(--ink);
+  font: 500 15px/1.35 var(--font-body);
+  text-align: center;
+  transition: transform .3s;
+}
+.bubble::after {
+  content: ""; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px;
+  background: var(--text); transform: translateX(-50%) rotate(45deg); border-radius: 3px;
+}
+.bubble.pop { animation: pop .35s ease-out; }
+.cube-wrap { width: 260px; max-width: 100%; }
+.cube-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+.mood-name { font: 500 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: background .3s, transform .3s; }
+.dots i.on { background: var(--lime); transform: scale(1.3); }
+
+#face, #acc { transform-origin: 140px 175px; }
+.swap { animation: swap .38s ease-out; }
+@keyframes swap { 0% { opacity: 0; transform: scale(.85); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes pop { 0% { transform: scale(.92); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  #body { animation: bob 3.2s ease-in-out infinite; transform-origin: 140px 220px; }
+  .eye-lid { animation: blink 4.6s infinite; transform-box: fill-box; transform-origin: center; }
+  #acc .float { animation: floaty 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swap, .bubble.pop { animation: none; }
+}
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+@keyframes floaty { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-6px) rotate(4deg); } }
+
+/* Телефон: кубик прячется в угол и продолжает менять эмоции */
+@media (max-width: 860px) {
+  .page { grid-template-columns: minmax(0, 1fr); gap: 0; padding-bottom: 140px; }
+  .buddy-col { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); z-index: 5; }
+  .buddy { position: static; flex-direction: row-reverse; align-items: flex-end; gap: 6px; }
+  .cube-wrap { width: 92px; }
+  .bubble { max-width: 190px; font-size: 13px; padding: 9px 12px; min-height: 0; }
+  .bubble::after { left: auto; right: -6px; bottom: 16px; transform: rotate(45deg); }
+  .mood-name, .dots { display: none; }
+  .section { min-height: 0; }
+  .section.dim { opacity: 1; }
+}
+</style>
+
+<main class="page">
+  <article class="story" id="story">
+
+    <section class="section" data-mood="hello">
+      <div class="eyebrow">Об авторе · ЕВА.Ноды: Лаборатория</div>
+      <h1>Привет, я <span class="hl">Владислав Ермолаев</span></h1>
+      <p class="lead">Мне 19, я из Ханты-Мансийска. Обучаю людей, делаю приложения и игры и собираю забавные и полезные штуки вместе с ИИ-агентами. Лабораторию, в которой ты сейчас сидишь, тоже сделал я.</p>
+    </section>
+
+    <section class="section" data-mood="proud">
+      <span class="tag">Школа</span>
+      <h2>Как я сюда пришёл</h2>
+      <p>В школе я жил олимпиадами: был победителем и призёром национального и всероссийского уровня по математике, физике, химии, информатике, биологии и экологии.</p>
+      <ul class="facts" aria-label="Главное">
+        <li><b>Абсолютный победитель</b> НТО, 8–11 классы</li>
+        <li><b>5 раз</b> на олимпиадных сменах Сириуса</li>
+        <li><b>Грант</b> «Больших вызовов»</li>
+      </ul>
+    </section>
+
+    <section class="section" data-mood="curious">
+      <span class="tag">Проекты</span>
+      <h2>Со второго класса — в проектах</h2>
+      <p>Проектами занимаюсь со второго класса. За это время написал и руководил десятками проектов: от социальных и экологических до серьёзных инженерных исследований.</p>
+    </section>
+
+    <section class="section" data-mood="excited">
+      <span class="tag">IT и геймдев</span>
+      <h2>Почему учёба должна быть как игра</h2>
+      <p>Потом было важное решение: уйти в IT, сначала в VR и AR-разработку, а оттуда в геймдев. Делая игры, я освоил несколько языков программирования и понял главное: люди готовы часами разбираться в сложной игре, если она удобная, красивая и затягивает.</p>
+      <p>А учебные программы чаще всего неудобные, некрасивые и скучные. Так я пришёл к тому, чем занимаюсь сейчас: делаю среды и приложения для обучения, в которых приятно находиться, и использую приёмы из геймдева, чтобы учиться было интересно.</p>
+    </section>
+
+    <section class="section" data-mood="focused">
+      <span class="tag">Сейчас</span>
+      <h2>Чем занимаюсь сейчас</h2>
+      <ul class="list">
+        <li>Уже 3 года преподаю шесть школьных предметов: математику, русский язык, физику, информатику, биологию и химию. А ещё то, чего нет в школьной программе: искусственный интеллект и нейросети, разработку игр и программирование.</li>
+        <li>Основал ЕВА и центр «ЕВА.Плюс».</li>
+        <li>Работал модератором и экспертом на образовательных сменах, куратор онлайн-курса.</li>
+        <li>Разрабатываю платформу ЕВА.Плюс и язык ЕВА.Ноды.</li>
+      </ul>
+    </section>
+
+    <section class="section" data-mood="cool">
+      <span class="tag">Навыки</span>
+      <h2>Что умею</h2>
+      <dl class="skills">
+        <div class="skill-row"><dt>Языки</dt><dd><span class="chip">Python</span><span class="chip">C++</span><span class="chip">C#</span><span class="chip">Java</span><span class="chip">1С</span><span class="chip">GDScript</span><span class="chip lime">ноды</span></dd></div>
+        <div class="skill-row"><dt>Движки</dt><dd><span class="chip">Godot</span><span class="chip">Unity</span><span class="chip">Unreal Engine</span></dd></div>
+        <div class="skill-row"><dt>Ещё</dt><dd><span class="chip">VR и AR</span><span class="chip">веб</span><span class="chip">нейросети</span><span class="chip">ИИ-агенты</span><span class="chip">методика</span><span class="chip">мероприятия</span></dd></div>
+      </dl>
+    </section>
+
+    <section class="section" data-mood="playful">
+      <span class="tag">Вне работы</span>
+      <h2>Кларнет, волейбол и хлорофитумы</h2>
+      <p>Окончил музыкальную школу по классам кларнета и фортепиано. Играю в волейбол — второй разряд, и сам сужу матчи: судья второй категории. А ещё люблю комнатные растения: в школе собрал сити-ферму, которая брала награды.</p>
+    </section>
+
+    <section class="section" data-mood="warm">
+      <span class="tag">Зачем</span>
+      <h2>Зачем я сделал Лабораторию</h2>
+      <p>Нейросети сейчас везде, но для большинства это магия. Я хочу, чтобы ты не верил ИИ на слово, а понимал, как он устроен, и мог собрать свой.</p>
+      <p class="quote">Кто хоть раз сам обучил сеть и увидел, как она ошибается, уже никогда не будет бояться ИИ или слепо ему доверять.</p>
+    </section>
+
+    <section class="section" data-mood="bye">
+      <span class="tag">Связь</span>
+      <h2>Пиши, если есть идея или вопрос</h2>
+      <div class="contacts">
+        <div class="contact"><span class="k">Telegram</span><a class="v" href="https://t.me/o_b_s_c_u" target="_blank" rel="noopener">@o_b_s_c_u</a><button type="button" class="copy" id="copy-tg" data-copy="@o_b_s_c_u">Копировать</button></div>
+        <div class="contact"><span class="k">Почта</span><span class="v">ermola2007@mail.ru</span><button type="button" class="copy" id="copy-mail" data-copy="ermola2007@mail.ru">Копировать</button></div>
+      </div>
+    </section>
+
+  </article>
+
+  <aside class="buddy-col" aria-label="Кубик ЕВА">
+    <div class="buddy">
+      <div class="bubble" id="bubble" aria-live="polite">Привет! Листай вниз</div>
+      <div class="cube-wrap">
+        <svg viewBox="0 0 280 300" role="img" aria-labelledby="cube-title">
+          <title id="cube-title">Кубик ЕВА меняет настроение вместе с разделом</title>
+          <ellipse cx="140" cy="286" rx="88" ry="10" fill="#000" opacity=".35"/>
+          <g id="body">
+            <polygon points="40,90 90,40 250,40 200,90" fill="#C6FF34"/>
+            <polygon points="200,90 250,40 250,210 200,260" fill="#0157B3"/>
+            <rect x="40" y="90" width="160" height="170" rx="6" fill="#0179FE"/>
+            <text x="145" y="70" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="700" font-size="16" fill="#1E1E1E" transform="skewX(-45) translate(70 0)">ЕВА</text>
+            <g id="face"></g>
+          </g>
+          <g id="acc"></g>
+        </svg>
+      </div>
+      <div class="mood-name" id="mood-name">привет</div>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+(function () {
+  var W = '#F3F3F3', I = '#1E1E1E', L = '#C6FF34', B = '#0179FE';
+  function eyes(l, r) { return '<g class="eye-lid">' + l + '</g><g class="eye-lid">' + r + '</g>'; }
+  function round(x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="15" fill="' + W + '"/><circle cx="' + (x + 3) + '" cy="' + (y + 2) + '" r="7" fill="' + I + '"/>'; }
+  function happyArc(x, y) { return '<path d="M' + (x - 13) + ' ' + (y + 4) + ' Q' + x + ' ' + (y - 14) + ' ' + (x + 13) + ' ' + (y + 4) + '" stroke="' + W + '" stroke-width="6" fill="none" stroke-linecap="round"/>'; }
+  function star(x, y) { return '<path d="M' + x + ' ' + (y - 15) + ' L' + (x + 5) + ' ' + (y - 4) + ' L' + (x + 16) + ' ' + (y - 3) + ' L' + (x + 7) + ' ' + (y + 5) + ' L' + (x + 10) + ' ' + (y + 16) + ' L' + x + ' ' + (y + 10) + ' L' + (x - 10) + ' ' + (y + 16) + ' L' + (x - 7) + ' ' + (y + 5) + ' L' + (x - 16) + ' ' + (y - 3) + ' L' + (x - 5) + ' ' + (y - 4) + 'Z" fill="' + L + '"/>'; }
+  function mouth(d, fill) { return '<path d="' + d + '" ' + (fill ? 'fill="' + fill + '"' : 'fill="none" stroke="' + I + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"') + '/>'; }
+
+  var MOODS = {
+    hello: {
+      name: 'привет', say: 'Привет! Листай вниз',
+      face: eyes(happyArc(92, 160), happyArc(148, 160)) + mouth('M88 200 Q120 236 152 200 Z', I) + '<circle cx="76" cy="190" r="9" fill="#F7A6C4" opacity=".55"/><circle cx="164" cy="190" r="9" fill="#F7A6C4" opacity=".55"/>',
+      acc: '<g class="float"><path d="M226 120 q8 -26 18 -4 q6 -20 14 0 q8 -14 12 6 q4 24 -14 34 q-22 8 -30 -36z" fill="' + L + '" stroke="' + I + '" stroke-width="3"/></g>'
+    },
+    proud: {
+      name: 'горжусь', say: 'Олимпиады — моё детство',
+      face: eyes('<path d="M78 152 h28" stroke="' + I + '" stroke-width="5" stroke-linecap="round"/>' + round(92, 166), '<path d="M134 152 h28" stroke="' + I + '" stroke-width="5" stroke-linecap="round"/>' + round(148, 166)) + mouth('M96 206 Q124 222 150 200'),
+      acc: '<g class="float"><path d="M114 238 l-14 34 h18 l8 -16 l8 16 h18 l-14 -34z" fill="' + B + '"/><circle cx="126" cy="236" r="22" fill="' + L + '" stroke="' + I + '" stroke-width="3"/><text x="126" y="244" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="700" font-size="20" fill="' + I + '">1</text></g>'
+    },
+    curious: {
+      name: 'интересно', say: 'А что, если попробовать?',
+      face: eyes('<path d="M76 146 l30 -6" stroke="' + I + '" stroke-width="5" stroke-linecap="round"/>' + round(92, 166), '<path d="M134 136 q16 -12 30 2" stroke="' + I + '" stroke-width="5" fill="none" stroke-linecap="round"/>' + '<circle cx="148" cy="164" r="19" fill="' + W + '"/><circle cx="152" cy="166" r="9" fill="' + I + '"/>') + '<ellipse cx="122" cy="210" rx="11" ry="13" fill="' + I + '"/>',
+      acc: '<g class="float"><circle cx="236" cy="96" r="20" fill="' + L + '"/><rect x="228" y="116" width="16" height="12" rx="3" fill="' + W + '"/><path d="M236 70 v-10 M262 96 h10 M210 96 h-10 M254 78 l7 -7 M218 78 l-7 -7" stroke="' + L + '" stroke-width="4" stroke-linecap="round"/></g>'
+    },
+    excited: {
+      name: 'вау', say: 'Игры научили меня учить',
+      face: eyes(star(92, 162), star(148, 162)) + mouth('M86 198 Q120 246 154 198 Z', I) + '<path d="M104 218 Q120 230 136 218" fill="#FF6B8B"/>',
+      acc: '<g class="float"><rect x="198" y="226" width="78" height="44" rx="20" fill="' + W + '" stroke="' + I + '" stroke-width="3"/><path d="M214 248 h16 M222 240 v16" stroke="' + I + '" stroke-width="4" stroke-linecap="round"/><circle cx="252" cy="242" r="5" fill="' + B + '"/><circle cx="262" cy="252" r="5" fill="#FF6B6B"/></g>'
+    },
+    focused: {
+      name: 'в деле', say: 'Шесть предметов и ИИ',
+      face: eyes(round(92, 164), round(148, 164)) + '<rect x="70" y="144" width="44" height="40" rx="10" fill="none" stroke="' + I + '" stroke-width="5"/><rect x="126" y="144" width="44" height="40" rx="10" fill="none" stroke="' + I + '" stroke-width="5"/><path d="M114 160 h12" stroke="' + I + '" stroke-width="5"/>' + mouth('M102 212 Q120 222 138 212'),
+      acc: '<g class="float"><rect x="200" y="96" width="70" height="52" rx="4" fill="' + I + '" stroke="' + W + '" stroke-width="3"/><text x="235" y="128" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" fill="' + L + '">x²+y</text></g>'
+    },
+    cool: {
+      name: 'спокойно', say: 'Код на любом языке',
+      face: '<path d="M64 150 h112 v8 q-4 30 -28 30 h-6 q-20 0 -22 -24 h-8 q-2 24 -22 24 h-6 q-24 0 -28 -30z" fill="' + I + '"/><path d="M80 158 l14 12" stroke="#555" stroke-width="4" stroke-linecap="round"/>' + mouth('M100 214 Q126 224 146 206'),
+      acc: '<g class="float"><text x="236" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="500" font-size="30" fill="' + L + '">&lt;/&gt;</text></g>'
+    },
+    playful: {
+      name: 'отдыхаю', say: 'Кларнет, мяч и растения',
+      face: eyes(round(92, 164), '<path d="M136 166 q12 -10 24 0" stroke="' + W + '" stroke-width="6" fill="none" stroke-linecap="round"/>') + mouth('M92 202 Q120 228 150 202') + '<path d="M120 214 q8 22 20 4 z" fill="#FF6B8B"/>',
+      acc: '<g class="float"><circle cx="240" cy="236" r="26" fill="' + W + '" stroke="' + I + '" stroke-width="3"/><path d="M214 236 q26 -16 52 0 M240 210 q-14 26 0 52" stroke="' + B + '" stroke-width="3" fill="none"/></g><g class="float"><path d="M232 88 v34 a8 6 0 1 1 -4 -6 v-24 l22 -6 v28 a8 6 0 1 1 -4 -6 v-18z" fill="' + L + '"/></g>'
+    },
+    warm: {
+      name: 'от души', say: 'Хочу, чтобы ты понимал ИИ',
+      face: eyes(happyArc(92, 166), happyArc(148, 166)) + mouth('M98 204 Q120 220 142 204') + '<circle cx="74" cy="196" r="10" fill="#F7A6C4" opacity=".6"/><circle cx="166" cy="196" r="10" fill="#F7A6C4" opacity=".6"/>',
+      acc: '<g class="float"><path d="M236 128 c-26 -18 -30 -40 -14 -46 c8 -3 14 2 14 8 c0 -6 6 -11 14 -8 c16 6 12 28 -14 46z" fill="#FF6B8B"/></g>'
+    },
+    bye: {
+      name: 'на связи', say: 'Пиши, отвечу!',
+      face: eyes(round(92, 162), round(148, 162)) + mouth('M88 198 Q120 238 152 198 Z', I) + '<path d="M104 216 Q120 228 136 216" fill="#FF6B8B"/>',
+      acc: '<g class="float"><rect x="198" y="92" width="74" height="50" rx="6" fill="' + W + '" stroke="' + I + '" stroke-width="3"/><path d="M200 96 l35 26 l35 -26" fill="none" stroke="' + B + '" stroke-width="3" stroke-linejoin="round"/></g>'
+    }
+  };
+
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.section'));
+  var face = document.getElementById('face');
+  var acc = document.getElementById('acc');
+  var bubble = document.getElementById('bubble');
+  var moodName = document.getElementById('mood-name');
+  var dots = document.getElementById('dots');
+  var current = null;
+
+  sections.forEach(function () { dots.appendChild(document.createElement('i')); });
+
+  function setMood(idx) {
+    var sec = sections[idx];
+    var key = sec.getAttribute('data-mood');
+    if (key === current) return;
+    current = key;
+    var m = MOODS[key];
+    face.innerHTML = m.face;
+    acc.innerHTML = m.acc;
+    bubble.textContent = m.say;
+    moodName.textContent = m.name;
+    [face, acc].forEach(function (el) { el.classList.remove('swap'); void el.getBBox(); el.classList.add('swap'); });
+    bubble.classList.remove('pop'); void bubble.offsetWidth; bubble.classList.add('pop');
+    sections.forEach(function (s, i) { s.classList.toggle('dim', i !== idx); });
+    Array.prototype.forEach.call(dots.children, function (d, i) { d.classList.toggle('on', i === idx); });
+  }
+
+  // Активный раздел — тот, что пересекает центральную полосу экрана
+  function pick() {
+    var mid = window.innerHeight / 2, best = 0, bestDist = Infinity;
+    sections.forEach(function (s, i) {
+      var r = s.getBoundingClientRect();
+      var d = r.top <= mid && r.bottom >= mid ? 0 : Math.min(Math.abs(r.top - mid), Math.abs(r.bottom - mid));
+      if (d < bestDist) { bestDist = d; best = i; }
+    });
+    var atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+    setMood(atBottom ? sections.length - 1 : best);
+  }
+
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(function () { ticking = false; pick(); }); }
+  }, { passive: true });
+  window.addEventListener('resize', pick);
+
+  setMood(0);
+  sections.forEach(function (s, i) { s.classList.toggle('dim', false); });
+  requestAnimationFrame(pick);
+
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.getAttribute('data-copy');
+      var done = function () { btn.textContent = 'Скопировано'; setTimeout(function () { btn.textContent = 'Копировать'; }, 1600); };
+      var fallback = function () {
+        var v = btn.parentElement.querySelector('.v');
+        var range = document.createRange(); range.selectNodeContents(v);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        btn.textContent = 'Выделено — нажми Ctrl+C';
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+    });
+  });
+})();
+</script>
