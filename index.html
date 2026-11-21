@@ -3,12 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ЕВА · Python</title>
+  <title>EVA Compiler</title>
   <link rel="icon" href="eva-brand-kit/logo/eva-logo-app-icon.svg">
   <link rel="stylesheet" href="eva-brand-kit/fonts/fonts.css">
   <link rel="stylesheet" href="eva-brand-kit/tokens/eva-tokens.css">
+  <link rel="stylesheet" href="eva-brand-kit/loader/EvaLoader.css">
   <style>
     * { box-sizing: border-box; }
+    html { overflow-anchor: none; }
+    #background-motion { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+    #background-motion span { position: absolute; top: 0; left: var(--x); width: var(--size); aspect-ratio: 1; background: url('eva-brand-kit/logo/eva-logo-lime.svg') center / contain no-repeat; opacity: .07; animation: eva-background-fall var(--duration) linear var(--delay) infinite; }
+    :root[data-editor-theme="light"] #background-motion span { background-image: url('eva-brand-kit/logo/eva-logo-graphite.svg'); opacity: .06; animation-duration: calc(var(--duration) * 1.3); }
+    :root[data-editor-theme="blue"] #background-motion span { background-image: url('eva-brand-kit/logo/eva-logo-blue.svg'); opacity: .12; animation-duration: calc(var(--duration) * 1.15); }
+    @keyframes eva-background-fall { from { transform: translate(-18%, -110%) rotate(-24deg); } to { transform: translate(24%, 105vh) rotate(35deg); } }
+    @media (prefers-reduced-motion: reduce) { #background-motion { display: none; } }
+    header, main, footer { position: relative; }
     body { margin: 0; background: var(--eva-bg); color: var(--eva-text); font: 16px var(--eva-font-body); }
     button, select { font: inherit; color: inherit; }
     button, select { background: var(--eva-panel-2); border: 1px solid var(--eva-line); border-radius: 8px; padding: 8px 12px; }
@@ -19,67 +28,164 @@
     header { padding: 14px clamp(14px, 3vw, 44px); background: var(--eva-panel); border-bottom: 1px solid var(--eva-line); }
     header, .bar, .actions, .tab, footer { display: flex; align-items: center; gap: 8px; }
     header, .bar { justify-content: space-between; flex-wrap: wrap; }
-    header img { width: 46px; height: 46px; }
+    .header-logo { --eva-size: 46px; display: block; flex: none; }
+    @media (prefers-reduced-motion: reduce) { .header-logo .eva-loader__spin { animation: none; } }
     h1 { font: 500 clamp(17px, 3vw, 24px) var(--eva-font-display); margin: 0; }
     h2 { font: 500 13px var(--eva-font-mono); margin: 0; }
     .actions { flex-wrap: wrap; }
-    main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px; padding: 14px clamp(14px, 3vw, 44px); min-height: calc(100dvh - 112px); }
-    .workspace { display: grid; grid-template-rows: minmax(340px, 2fr) minmax(210px, 1fr); gap: 12px; min-width: 0; }
+    .toolbar-option { display: inline-flex; align-items: center; gap: 6px; color: var(--eva-text-2); }
+    .toolbar-option select { max-width: 150px; }
+    main { display: grid; grid-template-columns: minmax(145px, .35fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px; padding: 14px clamp(14px, 3vw, 44px); min-height: calc(100dvh - 112px); }
+    .explorer .bar { align-items: flex-start; flex-direction: column; }
+    #folder-tree { max-height: 65vh; overflow: auto; padding: 8px; }
+    #folder-tree details { padding: 4px 0 4px 10px; border: 0; }
+    #folder-tree button { display: block; text-align: left; width: 100%; overflow: hidden; text-overflow: ellipsis; border: 0; background: none; }
+    #folder-tree button[aria-current="true"] { background: var(--eva-panel-2); color: var(--eva-lime); }
+    #folder-label { padding: 0 8px; overflow-wrap: anywhere; }
+    #folder-root { margin: 0 8px; }
+    #folder-tree [draggable] { cursor: grab; border-radius: 6px; }
+    #folder-tree .dragging { opacity: .45; }
+    #folder-tree .drop-target > summary, #folder-root.drop-target { outline: 2px solid var(--eva-blue-soft); outline-offset: -2px; background: var(--eva-panel-2); }
+    .workspace { display: grid; grid-template-rows: clamp(340px, 52dvh, 620px) clamp(240px, 33dvh, 380px); gap: 12px; min-width: 0; }
+    .workspace > .panel { min-height: 0; }
     .panel { background: var(--eva-panel); border: 1px solid var(--eva-line); border-radius: var(--eva-radius-l); min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .panel { background: color-mix(in srgb, var(--eva-panel) 88%, transparent); }
     .bar { min-height: 51px; padding: 8px 12px; border-bottom: 1px solid var(--eva-line); }
-    .tabs { display: flex; overflow-x: auto; gap: 4px; padding: 6px; border-bottom: 1px solid var(--eva-line); }
+    .tabs { position: relative; display: flex; overflow-x: auto; gap: 4px; padding: 6px; border-bottom: 1px solid var(--eva-line); }
     .tab { flex: none; border: 1px solid transparent; border-radius: 8px; gap: 0; }
     .tab.active { background: var(--eva-bg); border-color: var(--eva-line); box-shadow: inset 0 -2px var(--eva-lime); }
     .tab button { background: transparent; border-color: transparent; font: 12px var(--eva-font-mono); }
     .tab .close { padding-inline: 8px; color: var(--eva-text-2); }
     textarea { color: var(--eva-text); background: var(--eva-bg); border: 0; resize: none; font: 14px/1.65 var(--eva-font-mono); tab-size: 4; }
-    #editor { flex: 1; min-height: 200px; padding: 14px; outline-offset: -2px; }
-    .output { flex: 1; min-height: 80px; height: 0; overflow: auto; background: var(--eva-bg); padding: 12px; font: 13px/1.6 var(--eva-font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .editor-area { position: relative; flex: 1; min-height: 200px; background: var(--eva-bg); }
+    #editor, #highlight { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 14px; border: 0; font: 14px/1.65 var(--eva-font-mono); tab-size: 4; white-space: pre; overflow: auto; }
+    #editor { background: transparent; color: transparent; caret-color: var(--code-text, var(--eva-text)); outline-offset: -2px; }
+    #editor::selection { color: transparent; background: #6281ac66; }
+    #highlight { pointer-events: none; scrollbar-width: none; color: var(--code-text, var(--eva-text)); }
+    #suggestions { position: absolute; z-index: 2; bottom: 8px; left: 8px; max-width: calc(100% - 16px); padding: 4px; background: var(--eva-panel); border: 1px solid var(--eva-line); border-radius: 8px; box-shadow: 0 4px 14px #0007; }
+    #suggestions button { display: block; width: 100%; text-align: left; font: 13px var(--eva-font-mono); }
+    #suggestions button[aria-selected="true"] { border-color: var(--eva-blue-soft); }
+    .tok-key { color: var(--code-key, var(--eva-purple)); } .tok-string { color: var(--code-string, var(--eva-ok)); } .tok-number { color: var(--code-number, var(--eva-warn)); } .tok-comment { color: var(--code-comment, var(--eva-text-3)); } .tok-builtin { color: var(--code-builtin, var(--eva-blue-soft)); }
+    :root[data-editor-theme="light"] { color-scheme: light; --eva-bg: #f7f8fb; --eva-panel: #fff; --eva-panel-2: #edf0f5; --eva-line: #cdd4df; --eva-text: #202631; --eva-text-2: #485266; --eva-text-3: #626c80; --eva-purple: #6d36a3; --eva-ok: #3b6500; --eva-warn: #945000; --eva-err: #a32132; --eva-blue-soft: #075eb7; --pdf-glow: #e7effa; }
+    :root[data-editor-theme="blue"] { --eva-bg: #101723; --eva-panel: #172131; --eva-panel-2: #202e43; --eva-line: #33445f; --eva-text-3: #9baaca; --pdf-glow: #1a2a41; }
+    :root[data-code-palette="neon"] { --code-text: #e5faff; --code-key: #ff82cf; --code-string: #69ffc3; --code-number: #ffe080; --code-comment: #99a5bb; --code-builtin: #71d9ff; }
+    :root[data-code-palette="pastel"] { --code-text: #fff0ff; --code-key: #ceb7ff; --code-string: #bce8be; --code-number: #ffc5a5; --code-comment: #aba4c1; --code-builtin: #a9ccff; }
+    :root[data-code-palette="amber"] { --code-text: #fff1d0; --code-key: #ffcc62; --code-string: #afd987; --code-number: #ffab8f; --code-comment: #bdab94; --code-builtin: #9eddd5; }
+    :root[data-editor-theme="light"][data-code-palette="neon"] { --code-text: #172d37; --code-key: #a3176d; --code-string: #006347; --code-number: #795300; --code-comment: #5e657d; --code-builtin: #076693; }
+    :root[data-editor-theme="light"][data-code-palette="pastel"] { --code-text: #382745; --code-key: #6643a1; --code-string: #35683e; --code-number: #934b30; --code-comment: #675c79; --code-builtin: #305e9a; }
+    :root[data-editor-theme="light"][data-code-palette="amber"] { --code-text: #35270e; --code-key: #805200; --code-string: #426322; --code-number: #9a3d2d; --code-comment: #6c5f4f; --code-builtin: #276965; }
+    kbd { font: 12px var(--eva-font-mono); }
+    .console > .bar { flex: none; }
+    .console > details { min-height: 32px; overflow: auto; }
+    .output { flex: 1 0 54px; min-width: 0; min-height: 0; contain: size; overflow: auto; overscroll-behavior: contain; background: var(--eva-bg); padding: 12px; font: 13px/1.6 var(--eva-font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+    #turtle-canvas { display: block; width: min(100%, 640px); max-height: min(17vh, 145px); object-fit: contain; background: white; margin-inline: auto; }
     .error { color: var(--eva-err); }
     .muted { color: var(--eva-text-2); }
     details { padding: 7px 12px; border-top: 1px solid var(--eva-line); }
     summary { cursor: pointer; color: var(--eva-text-2); }
     details textarea { display: block; width: 100%; margin-top: 6px; padding: 8px; border-radius: 6px; }
-    .pdf-body { flex: 1; position: relative; min-height: 400px; display: grid; place-items: center; background: radial-gradient(ellipse at center, #22282e, var(--eva-bg) 72%); text-align: center; padding: 16px; }
+    .pdf-body { flex: 1; position: relative; min-height: 400px; display: grid; place-items: center; background: radial-gradient(ellipse at center, var(--pdf-glow, #22282e), var(--eva-bg) 72%); text-align: center; padding: 16px; }
     .pdf-body img { width: 72px; margin-bottom: 12px; }
     .pdf-body p { margin: 0 0 14px; }
     .pdf-tools { justify-content: center; }
+    .side-content { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+    .side-switch button[aria-pressed="true"], #board-tools button[aria-pressed="true"] { border-color: var(--eva-blue-soft); color: var(--eva-blue-soft); }
+    #board-tools { justify-content: flex-start; flex-wrap: nowrap; gap: 5px; overflow-x: auto; padding: 5px 7px; min-height: 42px; scrollbar-width: thin; }
+    #board-tools > * { flex: none; }
+    #board-tools button { min-width: 27px; min-height: 30px; padding: 3px 6px; }
+    #board-tools label { display: flex; align-items: center; gap: 3px; color: var(--eva-text-2); font-size: 12px; white-space: nowrap; }
+    #board-tools input[type="color"] { inline-size: 24px; block-size: 25px; padding: 2px; border: 1px solid var(--eva-line); border-radius: 6px; background: var(--eva-panel-2); }
+    #board-tools input[type="range"] { width: 44px; margin: 0; accent-color: var(--eva-blue-soft); }
+    #board-surface { display: flex; flex: 1; flex-direction: column; min-height: 360px; background: var(--eva-bg); }
+    #board-viewport { flex: 1; position: relative; min-height: 0; overflow: hidden; touch-action: none; }
+    #board { position: absolute; display: block; touch-action: none; cursor: crosshair; transform-origin: top left; }
+    #board-viewport[data-hand="true"], #board-viewport[data-hand="true"] #board { cursor: grab; }
+    #board-viewport[data-panning="true"], #board-viewport[data-panning="true"] #board { cursor: grabbing; }
+    #board-status { margin: 0; padding: 5px 8px; color: var(--eva-text-2); font-size: 11px; }
+    #board-panel.expanded { position: fixed; inset: 0; z-index: 20; background: var(--eva-panel); }
+    body:has(#board-panel.expanded) { overflow: hidden; }
     #pdf-page { width: 4.5em; padding: 6px; border: 1px solid var(--eva-line); border-radius: 6px; background: var(--eva-bg); color: inherit; font: inherit; }
     #pdf-view { position: absolute; inset: 0; overflow: auto; scrollbar-gutter: stable; }
     #pdf-view canvas { display: block; margin-inline: auto; background: white; }
     #pdf-message { position: absolute; z-index: 1; top: 12px; left: 12px; right: 12px; padding: 10px; border-radius: 8px; background: var(--eva-panel); }
     #pdf-name { overflow-wrap: anywhere; }
-    footer { padding: 0 clamp(14px, 3vw, 44px) 12px; font: 12px var(--eva-font-mono); color: var(--eva-text-2); justify-content: space-between; }
+    footer { padding: 0 clamp(14px, 3vw, 44px) 12px; font: 12px var(--eva-font-mono); color: var(--eva-text-2); justify-content: space-between; flex-wrap: wrap; }
     dialog { max-width: min(480px, calc(100% - 32px)); background: var(--eva-panel); color: var(--eva-text); border: 1px solid var(--eva-line); border-radius: 14px; padding: 20px; }
     dialog::backdrop { background: #000a; }
     [hidden] { display: none !important; }
-    @media (max-width: 800px) { main { grid-template-columns: 1fr; } .pdf-body { min-height: 65vh; } }
+    @media (max-width: 980px) { main { grid-template-columns: minmax(130px, .35fr) minmax(0, 1fr); } main > .panel:last-child { grid-column: 1 / -1; } .pdf-body { min-height: 65vh; } }
+    @media (max-width: 560px) { main { grid-template-columns: 1fr; } #folder-tree { max-height: 28vh; } }
   </style>
 </head>
 <body>
+  <div id="background-motion" aria-hidden="true">
+    <span style="--x:1%;--size:clamp(120px,22vw,350px);--duration:46s;--delay:-21s"></span><span style="--x:18%;--size:clamp(48px,8vw,110px);--duration:34s;--delay:-7s"></span>
+    <span style="--x:33%;--size:clamp(72px,13vw,220px);--duration:42s;--delay:-29s"></span><span style="--x:52%;--size:clamp(48px,7vw,100px);--duration:31s;--delay:-11s"></span>
+    <span style="--x:66%;--size:clamp(115px,23vw,330px);--duration:51s;--delay:-38s"></span><span style="--x:88%;--size:clamp(55px,9vw,140px);--duration:37s;--delay:-17s"></span>
+  </div>
   <header>
-    <div class="actions"><img src="eva-brand-kit/logo/eva-logo-lime.svg" alt=""><h1>ЕВА · Python</h1></div>
-    <div class="actions"><button id="help">Подсказки</button><button id="stop" disabled>■ Стоп</button><button id="run" class="primary" title="Ctrl+Enter">▶ Запустить</button></div>
+    <div class="actions">
+      <div id="header-logo" class="header-logo" aria-hidden="true">
+        <div class="eva-loader__stage">
+          <svg class="eva-loader__spin" viewBox="-150 -150 300 300" fill-rule="evenodd">
+            <g class="eva-loader__fly" style="--dx:0;--dy:-1"><path id="eva-header-face-0" class="eva-loader__face" transform="translate(-226 -210)" d="M230.0 59.2 L192.8 65.5 L111.5 125.0 L111.5 125.8 L225.0 210.8 L227.2 210.2 L316.2 145.5 L324.0 118.8 L322.5 116.5 L294.8 97.0 L252.5 103.0 L252.8 99.8 L258.5 79.5Z M249.5 129.2 L261.5 137.8 L264.0 140.5 L241.0 156.8 L227.8 147.0 L226.8 145.5Z M205.5 97.5 L220.0 108.5 L198.5 124.2 L197.0 124.5 L183.2 114.0Z"/></g>
+            <g class="eva-loader__fly" style="--dx:0.866;--dy:0.5"><path id="eva-header-face-1" class="eva-loader__face" transform="translate(-226 -210)" d="M344.5 136.5 L325.2 150.2 L231.5 222.0 L231.2 305.8 L232.0 347.2 L275.8 316.0 L275.8 300.5 L287.2 291.8 L298.5 284.2 L298.8 298.5 L299.5 299.0 L342.5 267.8Z M287.5 213.5 L298.8 252.5 L276.2 268.5 L275.8 267.2 L286.5 214.8Z"/></g>
+            <g class="eva-loader__fly" style="--dx:-0.866;--dy:0.5"><path id="eva-header-face-2" class="eva-loader__face" transform="translate(-226 -210)" d="M102.0 135.8 L101.0 264.0 L221.5 348.2 L221.5 317.5 L148.8 265.5 L148.8 250.5 L149.8 250.0 L197.5 283.2 L197.5 252.5 L149.2 217.8 L149.2 202.2 L150.5 201.8 L221.0 252.5 L221.8 252.2 L221.5 221.5Z"/></g>
+          </svg>
+          <svg viewBox="-150 -150 300 300" fill-rule="evenodd">
+            <defs><filter id="eva-header-glow"><feGaussianBlur stdDeviation="12"/></filter></defs>
+            <g class="eva-loader__glow" filter="url(#eva-header-glow)"><use href="#eva-header-face-0"/><use href="#eva-header-face-1"/><use href="#eva-header-face-2"/></g>
+            <circle class="eva-loader__ring" cx="0" cy="0" r="120"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:8deg;--r:150px;--spin:90deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:38deg;--r:182px;--spin:-120deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:66deg;--r:140px;--spin:160deg"/>
+            <rect class="eva-loader__bit eva-loader__bit--blue" x="-9" y="-9" width="18" height="18" rx="3" style="--a:98deg;--r:172px;--spin:-90deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:128deg;--r:150px;--spin:120deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:158deg;--r:186px;--spin:-160deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:190deg;--r:145px;--spin:90deg"/>
+            <rect class="eva-loader__bit eva-loader__bit--blue" x="-9" y="-9" width="18" height="18" rx="3" style="--a:218deg;--r:176px;--spin:-120deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:248deg;--r:152px;--spin:140deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:278deg;--r:184px;--spin:-90deg"/>
+            <rect class="eva-loader__bit" x="-9" y="-9" width="18" height="18" rx="3" style="--a:308deg;--r:146px;--spin:120deg"/>
+            <rect class="eva-loader__bit eva-loader__bit--blue" x="-9" y="-9" width="18" height="18" rx="3" style="--a:338deg;--r:170px;--spin:-140deg"/>
+          </svg>
+        </div>
+      </div>
+      <h1>EVA Compiler</h1><select id="language" aria-label="Язык программирования"><option value="python">Python</option><option value="cpp">C++</option><option value="javascript">JavaScript</option></select>
+    </div>
+    <div class="actions">
+      <label class="toolbar-option">Тема:<select id="theme"><option value="dark">ЕВА Тёмная</option><option value="light">Светлая</option><option value="blue">Синяя</option></select></label>
+      <label class="toolbar-option">Текст:<select id="code-palette"><option value="eva">ЕВА</option><option value="neon">Неон</option><option value="pastel">Пастель</option><option value="amber">Янтарь</option></select></label>
+      <label class="toolbar-option"><input id="background-toggle" type="checkbox" checked> Фоновая анимация</label>
+      <button id="help">Подсказки</button><button id="stop" disabled>■ Стоп</button><button id="run" class="primary" title="F5 / Ctrl+Enter">▶ Запустить <kbd>F5</kbd></button>
+    </div>
   </header>
   <main>
+    <aside class="panel explorer" aria-labelledby="folder-title">
+      <div class="bar"><h2 id="folder-title">Проводник</h2><div class="actions"><button id="open-folder">Открыть папку</button><button id="refresh-folder" title="Обновить дерево" hidden>↻</button><button id="new-folder" title="Создать подпапку" hidden>+ Папка</button></div></div>
+      <p id="folder-label" class="muted" role="status">Папка не выбрана</p><button id="folder-root" type="button" title="Перетащите сюда, чтобы переместить в корень" hidden>⌂ Корень папки</button><div id="folder-tree"></div>
+    </aside>
     <div class="workspace">
       <section class="panel" aria-label="Редактор Python">
         <div class="bar">
-          <div class="actions"><button id="new">+ Файл</button><button id="open">Открыть .py</button><button id="save" title="Ctrl+S">Скачать .py</button></div>
+          <div class="actions"><button id="new">+ Файл</button><button id="open">Открыть файл</button><button id="save" title="Ctrl+S">Скачать</button></div>
           <select id="snippets" aria-label="Вставить пример кода">
             <option value="">Вставить пример</option><option value="print">Вывод</option><option value="input">Ввод</option><option value="loop">Цикл</option><option value="function">Функция</option>
           </select>
         </div>
         <div class="tabs" id="tabs" aria-label="Открытые файлы"></div>
-        <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Код Python" wrap="off"></textarea>
+        <div class="editor-area"><pre id="highlight" aria-hidden="true"></pre><textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Исходный код" wrap="off"></textarea><div id="suggestions" role="listbox" aria-label="Подсказки редактора" hidden></div></div>
       </section>
-      <section class="panel" aria-labelledby="output-title">
+      <section class="panel console" aria-labelledby="output-title">
         <div class="bar"><h2 id="output-title">Консоль</h2><div class="actions"><button id="save-log">Скачать лог</button><button id="clear">Очистить</button></div></div>
         <div class="output" id="output" tabindex="0" aria-label="Вывод программы"><span class="muted">Запустите открытый файл, чтобы увидеть результат.</span></div>
-        <details><summary>Ввод для input()</summary><textarea id="stdin" rows="2" aria-label="Ввод для программы" placeholder="По одному ответу на строку"></textarea></details>
+        <details><summary>Ввод для программы</summary><textarea id="stdin" rows="2" aria-label="Ввод для программы" placeholder="По одному ответу на строку"></textarea></details>
+        <details id="turtle-view" hidden><summary>Рисунок turtle</summary><canvas id="turtle-canvas" width="900" height="600" aria-label="Рисунок Python turtle"></canvas></details>
       </section>
     </div>
-    <section class="panel" aria-labelledby="pdf-title">
+    <section class="panel" aria-label="PDF и холст">
+      <div class="bar side-switch" role="group" aria-label="Правая панель"><div class="actions"><button id="show-pdf" aria-pressed="true" aria-controls="pdf-panel">PDF</button><button id="show-board" aria-pressed="false" aria-controls="board-panel">Холст</button></div></div>
+      <div id="pdf-panel" class="side-content" aria-labelledby="pdf-title">
       <div class="bar"><h2 id="pdf-title">PDF <span id="pdf-name" class="muted"></span></h2><div class="actions"><button id="open-pdf">Открыть PDF</button><button id="close-pdf" hidden>Закрыть</button></div></div>
       <div class="bar actions pdf-tools" id="pdf-tools" hidden>
         <button id="pdf-prev" aria-label="Предыдущая страница">←</button>
@@ -94,21 +200,38 @@
         <div id="pdf-view" tabindex="0" aria-label="Страница PDF" hidden></div>
         <div id="pdf-message" role="status" hidden></div>
       </div>
+      </div>
+      <div id="board-panel" class="side-content" hidden>
+        <div class="bar actions" id="board-tools">
+          <button id="board-pen" aria-label="Карандаш" title="Карандаш" aria-pressed="true">✎</button><button id="board-eraser" aria-label="Ластик" title="Ластик" aria-pressed="false">▱</button><button id="board-hand" aria-label="Перемещение" title="Перемещение (Пробел или средняя кнопка мыши)" aria-pressed="false">✋</button>
+          <label title="Цвет карандаша"><input id="board-color" aria-label="Цвет карандаша" type="color" value="#222222"></label>
+          <label title="Толщина"><input id="board-width" aria-label="Толщина" type="range" min="1" max="60" value="6"><output id="board-width-value" for="board-width">6</output></label>
+          <label>Фон <input id="board-background" type="color" value="#ffffff"></label>
+          <button id="board-image" aria-label="Вставить картинку" title="Вставить картинку">▧</button><button id="board-undo" aria-label="Отменить" title="Отменить" disabled>↶</button>
+          <button id="board-zoom-out" aria-label="Уменьшить" title="Уменьшить">−</button><button id="board-zoom" aria-label="Сбросить масштаб и положение" title="Сбросить масштаб и положение">100%</button><button id="board-zoom-in" aria-label="Увеличить" title="Увеличить">+</button>
+          <button id="board-expand" aria-label="На всё окно" title="На всё окно" aria-pressed="false">⛶</button>
+        </div>
+        <div id="board-surface">
+          <div id="board-viewport"><canvas id="board" width="1200" height="900" tabindex="0" aria-label="Холст для рисования и вставки изображений"></canvas></div>
+          <p id="board-status" role="status">Колесо — масштаб · Рука или пробел — перемещение · Ctrl+V — картинка</p>
+        </div>
+      </div>
     </section>
   </main>
   <footer><span id="status" role="status">Python готов к загрузке</span><span id="storage-status" role="status"></span><span id="position"></span></footer>
-  <input id="py-files" type="file" accept=".py" multiple hidden>
+  <input id="py-files" type="file" accept=".py,.cpp,.cc,.cxx,.h,.hpp,.js,.mjs,.txt,.json,.csv" multiple hidden>
   <input id="pdf-file" type="file" accept=".pdf,application/pdf" hidden>
+  <input id="board-file" type="file" accept="image/*" hidden>
   <dialog id="tips">
     <form method="dialog">
       <h2>Подсказки</h2>
       <ul>
-        <li><kbd>Ctrl+Enter</kbd> запускает текущий файл, <kbd>Ctrl+S</kbd> скачивает его.</li>
+        <li><kbd>F5</kbd> или <kbd>Ctrl+Enter</kbd> запускают файл. <kbd>Ctrl+S</kbd> сохраняет файл в выбранной папке или скачивает его. <kbd>Ctrl+Space</kbd> показывает подсказки.</li>
         <li><kbd>Tab</kbd> вставляет четыре пробела. Чтобы выйти из редактора, нажмите <kbd>Esc</kbd>, затем <kbd>Tab</kbd>.</li>
         <li>Чтобы использовать <code>input()</code>, заранее впишите ответы в поле под консолью.</li>
         <li>Открытые файлы лежат в одной рабочей папке Python. Из <code>helpers.py</code> можно импортировать через <code>import helpers</code>.</li>
         <li>Стандартная библиотека Python доступна сразу после загрузки. Поддерживаемые Pyodide пакеты загружаются из интернета по импорту.</li>
-        <li>Вкладки, код, ввод и журнал сохраняются в этом браузере. Кнопка «Скачать .py» создаёт отдельный файл.</li>
+        <li>Вкладки, код, ввод и журнал сохраняются в браузере. При работе с папкой изменения также записываются на диск.</li>
         <li>Запуск ограничен двумя минутами. Долгую программу можно остановить кнопкой «Стоп».</li>
       </ul>
       <button class="primary">Закрыть</button>
@@ -132,6 +255,8 @@
     const pdfView = $('pdf-view');
     let pdfSession;
     let worker;
+    let workerLanguage;
+    let runRevision = 0;
     let busy = false;
     let allowTabExit = false;
     let log = [];
@@ -139,12 +264,43 @@
     let saveTimer;
     let runTimer;
     let storageFailed = false;
+    let folder;
+    let folderIdentity = restored?.folderIdentity;
+    const diskWrites = new WeakMap();
+    const diskTimers = new WeakMap();
+    const filePattern = /\.(py|cpp|cc|cxx|h|hpp|js|mjs|txt|json|csv)$/i;
+    const languages = { python: '.py', cpp: '.cpp', javascript: '.js' };
+    const languageFor = name => /\.py$/i.test(name) ? 'python' : /\.(cpp|cc|cxx|h|hpp)$/i.test(name) ? 'cpp' : /\.(js|mjs)$/i.test(name) ? 'javascript' : '';
+    let language = Object.hasOwn(languages, restored?.language) ? restored.language : 'python';
+    let pageScroll = Array.isArray(restored?.scroll) ? restored.scroll : [0, 0];
+    let restoringScroll = true;
+    const openDirectories = new Set(restored?.directories ?? []);
+    let sidePanel = restored?.sidePanel === 'board' ? 'board' : 'pdf';
+    const boardView = { zoom: Math.min(5, Math.max(.25, restored?.boardView?.zoom || 1)), x: restored?.boardView?.x || 0, y: restored?.boardView?.y || 0 };
+    let movingFolderItem = false;
+
+    function workspaceRecord(key, mode, value) {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('eva-compiler', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('workspace');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction('workspace', mode);
+          const store = tx.objectStore('workspace');
+          const entry = mode === 'readonly' ? store.get(key) : value === undefined ? store.delete(key) : store.put(value, key);
+          tx.oncomplete = () => { db.close(); resolve(entry.result); };
+          tx.onabort = () => { db.close(); reject(tx.error); };
+        };
+      });
+    }
 
     function persist() {
       clearTimeout(saveTimer);
       saveTimer = undefined;
       try {
-        localStorage.setItem(storageKey, JSON.stringify({ files, active: active?.name, stdin: $('stdin').value, log, busy }));
+        const pdf = pdfSession && { name: pdfSession.name, page: pdfSession.page, zoom: pdfSession.zoom, scroll: pdfSession.scroll };
+        localStorage.setItem(storageKey, JSON.stringify({ files, active: active?.name, stdin: $('stdin').value, log, busy, language, theme: $('theme').value, palette: $('code-palette').value, scroll: pageScroll, directories: [...openDirectories], folderIdentity, inputOpen: $('stdin').parentElement.open, outputScroll: output.scrollTop, pdf, sidePanel, boardView, backgroundMotion: $('background-toggle').checked }));
         storageFailed = false;
         $('storage-status').textContent = 'Автосохранение включено';
       } catch {
@@ -183,7 +339,8 @@
         tabs.append(tab);
       }
       tabs.scrollLeft = scroll;
-      tabs.querySelector('.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      const selected = tabs.querySelector('.active');
+      if (selected && (selected.offsetLeft < scroll || selected.offsetLeft + selected.offsetWidth > scroll + tabs.clientWidth)) tabs.scrollLeft = selected.offsetLeft - tabs.clientWidth / 3;
     }
 
     function updatePosition() {
@@ -199,31 +356,51 @@
       editor.disabled = !file;
       $('snippets').disabled = !file;
       $('save').disabled = !file;
-      $('run').disabled = !file || busy;
+      $('run').disabled = !file || !runnable(file) || busy;
       editor.value = file?.code ?? '';
       editor.setSelectionRange(file?.start ?? 0, file?.end ?? 0);
-      editor.scrollTop = 0;
-      editor.scrollLeft = 0;
+      editor.scrollTop = file?.scrollTop ?? 0;
+      editor.scrollLeft = file?.scrollLeft ?? 0;
+      if (file && languageFor(file.name)) language = languageFor(file.name);
+      $('language').value = language;
+      $('snippets').disabled = !file || language !== 'python';
+      $('save').textContent = file?.folderId && folder && file.folderId === folderIdentity ? 'Сохранить' : 'Скачать';
       renderTabs();
+      paintCode();
+      hideSuggestions();
+      markFolderSelection();
       updatePosition();
-      if (focus) (file ? editor : $('new')).focus();
+      if (focus) (file ? editor : $('new')).focus({ preventScroll: true });
       persist();
     }
 
     function addFile(name, code = '', dirty = false) {
-      const stem = name.slice(0, -3);
+      const extension = name.match(/\.[^.]+$/)?.[0] ?? '';
+      const stem = extension ? name.slice(0, -extension.length) : name;
       let candidate = name;
-      for (let suffix = 2; files.some(file => file.name === candidate); suffix++) candidate = `${stem}_${suffix}.py`;
+      for (let suffix = 2; files.some(file => !file.folderId && file.name === candidate); suffix++) candidate = `${stem}_${suffix}${extension}`;
       const file = { name: candidate, code, start: 0, end: 0, dirty };
       files.push(file);
       return file;
     }
 
-    $('new').onclick = () => {
-      const name = prompt('Имя Python-файла', 'untitled.py')?.trim();
+    $('new').onclick = async () => {
+      if (movingFolderItem) return;
+      const name = prompt('Имя файла или путь внутри папки', 'untitled' + languages[language])?.trim();
       if (!name) return;
-      if (/[<>:"/\\|?*\x00-\x1f]/.test(name)) { alert('Введите имя файла без пути и специальных символов.'); return; }
-      activate(addFile(name.replace(/\.py$/i, '') + '.py', '', true), true);
+      const path = /\.[^/.]+$/.test(name) ? name : name + languages[language];
+      if (!validPath(path) || (!folder && path.includes('/'))) { alert('Проверьте имя файла и путь внутри папки.'); return; }
+      if (!folder) { activate(addFile(path, '', true), true); return; }
+      const root = folder;
+      try {
+        const handle = await folderFile(root, path, true);
+        if (root !== folder) return;
+        const parts = path.split('/');
+        parts.pop();
+        parts.forEach((_, index) => openDirectories.add(parts.slice(0, index + 1).join('/')));
+        await openFolderFile(path, handle);
+        await renderFolder();
+      } catch (error) { folderError(error); }
     };
     $('open').onclick = () => $('py-files').click();
     $('py-files').onchange = async event => {
@@ -232,8 +409,8 @@
       let lastOpened;
       const failed = [];
       for (const file of selected) {
-        if (!/\.py$/i.test(file.name)) { failed.push(file.name); continue; }
-        try { lastOpened = addFile(file.name.replace(/\.py$/i, '.py'), await file.text()); }
+        if (!filePattern.test(file.name)) { failed.push(file.name); continue; }
+        try { lastOpened = addFile(file.name, await file.text()); }
         catch { failed.push(file.name); }
       }
       if (lastOpened) activate(lastOpened, true);
@@ -251,7 +428,8 @@
 
     function save() {
       if (!active) return;
-      download(active.name, active.code, 'text/x-python;charset=utf-8');
+      if (folder && active.folderId === folderIdentity) { queueDiskSave(active); return; }
+      download(active.name.split('/').at(-1), active.code, 'text/plain;charset=utf-8');
       active.dirty = false;
       renderTabs();
       persist();
@@ -262,11 +440,26 @@
       active.code = editor.value;
       if (!active.dirty) { active.dirty = true; renderTabs(); }
       updatePosition();
+      paintCode();
+      updateSuggestions();
+      if (folder && active.folderId === folderIdentity) {
+        const file = active;
+        clearTimeout(diskTimers.get(file));
+        diskTimers.set(file, setTimeout(() => queueDiskSave(file), 650));
+      }
       scheduleSave();
     });
     $('stdin').addEventListener('input', scheduleSave);
-    document.addEventListener('selectionchange', () => { if (document.activeElement === editor) updatePosition(); });
-    editor.addEventListener('blur', () => { allowTabExit = false; });
+    document.addEventListener('selectionchange', () => { if (document.activeElement === editor) { updatePosition(); scheduleSave(); } });
+    editor.addEventListener('scroll', () => {
+      syncHighlight();
+      if (!active) return;
+      active.scrollTop = editor.scrollTop;
+      active.scrollLeft = editor.scrollLeft;
+      scheduleSave();
+    });
+    editor.addEventListener('blur', () => { allowTabExit = false; hideSuggestions(); });
+    editor.addEventListener('pointerdown', hideSuggestions);
     function insertCode(text) {
       if (!document.execCommand('insertText', false, text)) {
         editor.setRangeText(text, editor.selectionStart, editor.selectionEnd, 'end');
@@ -274,6 +467,8 @@
       }
     }
     editor.addEventListener('keydown', event => {
+      if (event.ctrlKey && event.code === 'Space') { event.preventDefault(); updateSuggestions(true); return; }
+      if (handleSuggestionKey(event)) return;
       if (event.key === 'Escape') { allowTabExit = true; return; }
       if (event.key === 'Tab' && !event.shiftKey && !allowTabExit) {
         event.preventDefault();
@@ -293,6 +488,461 @@
       event.target.value = '';
     };
 
+    const validPath = path => path.split('/').every(part => part && part !== '.' && part !== '..' && !/[<>:"\\|?*\x00-\x1f]/.test(part));
+    const codeFiles = new Map();
+    let treeRevision = 0;
+    const folderError = error => { $('folder-label').textContent = `Папка: ${error.message}`; };
+
+    async function folderDirectory(root, path, create = false) {
+      let directory = root;
+      for (const name of path) directory = await directory.getDirectoryHandle(name, { create });
+      return directory;
+    }
+
+    async function folderFile(root, path, create = false) {
+      const parts = path.split('/');
+      const name = parts.pop();
+      return (await folderDirectory(root, parts, create)).getFileHandle(name, { create });
+    }
+
+    function markFolderSelection() {
+      for (const button of $('folder-tree').querySelectorAll('button[data-path]')) {
+        button.setAttribute('aria-current', Boolean(active?.folderId && active.folderId === folderIdentity && active.name === button.dataset.path));
+      }
+    }
+
+    async function openFolderFile(path, handle, focus = true) {
+      if (movingFolderItem) return;
+      const id = folderIdentity;
+      const code = await (await handle.getFile()).text();
+      if (id !== folderIdentity) return;
+      let file = files.find(entry => entry.folderId === id && entry.name === path);
+      if (!file) {
+        file = { name: path, folderId: id, code, diskCode: code, dirty: false, start: 0, end: 0 };
+        files.push(file);
+      } else if (!file.dirty) {
+        file.code = file.diskCode = code;
+      }
+      activate(file, focus);
+    }
+
+    let draggedItem;
+    let dropTarget;
+    let expandDropTarget;
+
+    function clearDropTarget() {
+      dropTarget?.classList.remove('drop-target');
+      dropTarget = undefined;
+      clearTimeout(expandDropTarget);
+    }
+
+    function bindDragSource(element, path, handle) {
+      element.draggable = true;
+      element.ondragstart = event => {
+        if (movingFolderItem || !event.dataTransfer) { event.preventDefault(); return; }
+        event.stopPropagation();
+        draggedItem = { path, handle, root: folder };
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('application/x-eva-folder-item', path);
+        element.classList.add('dragging');
+      };
+      element.ondragend = () => {
+        element.classList.remove('dragging');
+        draggedItem = undefined;
+        clearDropTarget();
+      };
+    }
+
+    function canDrop(item, targetPath) {
+      if (!item || movingFolderItem || item.root !== folder) return false;
+      const sourceParent = item.path.slice(0, Math.max(0, item.path.lastIndexOf('/')));
+      return sourceParent !== targetPath && targetPath !== item.path && !targetPath.startsWith(item.path + '/');
+    }
+
+    function bindDropTarget(element, path, handle) {
+      element.ondragover = event => {
+        if (!draggedItem) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (!canDrop(draggedItem, path)) { clearDropTarget(); event.dataTransfer.dropEffect = 'none'; return; }
+        event.dataTransfer.dropEffect = 'move';
+        if (dropTarget !== element) {
+          clearDropTarget();
+          dropTarget = element;
+          element.classList.add('drop-target');
+          if (element.tagName === 'DETAILS' && !element.open) {
+            expandDropTarget = setTimeout(() => { if (dropTarget === element) element.open = true; }, 550);
+          }
+        }
+      };
+      element.ondragleave = event => {
+        if (dropTarget === element && !element.contains(event.relatedTarget instanceof Node ? event.relatedTarget : null)) clearDropTarget();
+      };
+      element.ondrop = event => {
+        if (!draggedItem) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const item = draggedItem;
+        if (canDrop(item, path)) moveFolderItem(item, path, handle);
+        clearDropTarget();
+      };
+    }
+
+    async function snapshotEntry(handle) {
+      if (handle.kind === 'file') return { handle, file: await handle.getFile() };
+      const children = new Map();
+      for await (const [name, child] of handle.entries()) children.set(name, await snapshotEntry(child));
+      return { handle, children };
+    }
+
+    async function entryUnchanged(snapshot, handle) {
+      if (!await snapshot.handle.isSameEntry(handle)) return false;
+      if (snapshot.file) {
+        const current = await handle.getFile();
+        return current.size === snapshot.file.size && current.lastModified === snapshot.file.lastModified;
+      }
+      let count = 0;
+      for await (const [name, child] of handle.entries()) {
+        const original = snapshot.children.get(name);
+        if (!original || !await entryUnchanged(original, child)) return false;
+        count++;
+      }
+      return count === snapshot.children.size;
+    }
+
+    async function copyEntryContents(snapshot, destination) {
+      if (snapshot.file) {
+        const writer = await destination.createWritable();
+        try { await writer.write(snapshot.file); await writer.close(); }
+        catch (error) { await writer.abort().catch(() => {}); throw error; }
+        const copy = await destination.getFile();
+        if (copy.size !== snapshot.file.size) throw new Error('Записалась только часть файла.');
+        return;
+      }
+      for (const [name, child] of snapshot.children) {
+        const target = child.file
+          ? await destination.getFileHandle(name, { create: true })
+          : await destination.getDirectoryHandle(name, { create: true });
+        await copyEntryContents(child, target);
+      }
+    }
+
+    async function moveFolderItem(item, targetPath, target) {
+      if (!canDrop(item, targetPath)) return;
+      movingFolderItem = true;
+      const controls = ['open-folder', 'new-folder', 'refresh-folder', 'new'];
+      controls.forEach(id => { $(id).disabled = true; });
+      const parts = item.path.split('/');
+      const name = parts.pop();
+      const destinationPath = targetPath ? `${targetPath}/${name}` : name;
+      const id = folderIdentity;
+      const underSource = path => path === item.path || path.startsWith(item.path + '/');
+      const remap = path => destinationPath + path.slice(item.path.length);
+      const projectFiles = files.filter(file => file.folderId === id);
+      let created = false;
+      let deletingOriginal = false;
+      let message;
+      $('folder-label').textContent = `Перемещаем ${name}…`;
+      try {
+        await Promise.all(projectFiles.map(file => diskWrites.get(file)));
+        for await (const [existing] of target.entries()) {
+          if (existing === name || existing.toLowerCase() === name.toLowerCase()) throw new Error(`В этой папке уже есть «${name}».`);
+        }
+        if (projectFiles.some(file => file.name === destinationPath || file.name.startsWith(destinationPath + '/'))) {
+          throw new Error('Вкладка с таким путём уже открыта. Сохраните её и закройте перед перемещением.');
+        }
+        const parent = await folderDirectory(item.root, parts);
+        const directory = item.handle.kind === 'directory';
+        const original = directory ? await parent.getDirectoryHandle(name) : await parent.getFileHandle(name);
+        if (!await item.handle.isSameEntry(original)) throw new Error('Исходный объект уже изменился. Обновите дерево.');
+        const snapshot = await snapshotEntry(original);
+        const destination = directory ? await target.getDirectoryHandle(name, { create: true }) : await target.getFileHandle(name, { create: true });
+        created = true;
+        await copyEntryContents(snapshot, destination);
+        if (!await entryUnchanged(snapshot, original)) throw new Error('Исходные файлы изменились во время перемещения. Повторите операцию.');
+        deletingOriginal = true;
+        await parent.removeEntry(name, { recursive: directory });
+        for (const file of files) if (file.folderId === id && underSource(file.name)) file.name = remap(file.name);
+        for (const path of [...openDirectories]) {
+          if (!underSource(path)) continue;
+          openDirectories.delete(path);
+          openDirectories.add(remap(path));
+        }
+        if (targetPath) openDirectories.add(targetPath);
+        renderTabs();
+        persist();
+        message = `Перемещено в ${targetPath || 'корень папки'}: ${name}`;
+      } catch (error) {
+        if (created && !deletingOriginal) {
+          try { await target.removeEntry(name, { recursive: item.handle.kind === 'directory' }); }
+          catch { message = `${error.message} Проверьте незавершённую копию в папке назначения.`; }
+        }
+        message ??= deletingOriginal ? `${error.message} Копия осталась в папке назначения.` : error.message;
+      } finally {
+        movingFolderItem = false;
+        controls.forEach(id => { $(id).disabled = false; });
+        try { await renderFolder(); } catch (error) { message = `${message} · ${error.message}`; }
+        $('folder-label').textContent = message;
+        for (const file of files) if (file.folderId === id && file.dirty) queueDiskSave(file);
+      }
+    }
+
+    async function readTree(directory, prefix, parent, revision, handles) {
+      const entries = [];
+      for await (const [name, handle] of directory.entries()) {
+        if (name.startsWith('.') || (handle.kind === 'directory' && ['node_modules', '__pycache__'].includes(name))) continue;
+        entries.push([name, handle]);
+      }
+      entries.sort(([a, first], [b, second]) => first.kind === second.kind ? a.localeCompare(b, 'ru', { numeric: true }) : first.kind === 'directory' ? -1 : 1);
+      for (const [name, handle] of entries) {
+        if (revision !== treeRevision) return;
+        const path = prefix + name;
+        if (handle.kind === 'directory') {
+          const branch = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = name;
+          bindDragSource(summary, path, handle);
+          bindDropTarget(branch, path, handle);
+          branch.append(summary);
+          branch.open = openDirectories.has(path);
+          branch.ontoggle = () => {
+            if (revision !== treeRevision) return;
+            if (branch.open) openDirectories.add(path); else openDirectories.delete(path);
+            scheduleSave();
+          };
+          parent.append(branch);
+          await readTree(handle, path + '/', branch, revision, handles);
+        } else {
+          const editable = filePattern.test(name);
+          if (editable) handles.set(path, handle);
+          const button = document.createElement('button');
+          button.textContent = name;
+          button.title = editable ? path : `${path} · скачать`;
+          button.dataset.path = path;
+          button.onclick = () => {
+            if (movingFolderItem) return;
+            if (editable) openFolderFile(path, handle).catch(folderError);
+            else handle.getFile().then(file => download(name, file, file.type)).catch(folderError);
+          };
+          bindDragSource(button, path, handle);
+          parent.append(button);
+        }
+      }
+    }
+
+    async function renderFolder() {
+      if (!folder) return;
+      const revision = ++treeRevision;
+      const tree = document.createDocumentFragment();
+      const handles = new Map();
+      await readTree(folder, '', tree, revision, handles);
+      if (revision !== treeRevision) return;
+      const top = $('folder-tree').scrollTop;
+      $('folder-tree').replaceChildren(tree);
+      $('folder-tree').scrollTop = top;
+      codeFiles.clear();
+      for (const [path, handle] of handles) codeFiles.set(path, handle);
+      markFolderSelection();
+      $('folder-label').textContent = folder.name;
+    }
+
+    async function connectFolder(handle, id) {
+      if (folderIdentity !== id) openDirectories.clear();
+      folder = handle;
+      folderIdentity = id;
+      codeFiles.clear();
+      $('refresh-folder').hidden = $('new-folder').hidden = $('folder-root').hidden = false;
+      bindDropTarget($('folder-root'), '', handle);
+      $('save').textContent = active?.folderId === id ? 'Сохранить' : 'Скачать';
+      persist();
+      await renderFolder();
+      await Promise.all(files.filter(file => file.folderId === id && file.dirty).map(queueDiskSave));
+    }
+
+    $('open-folder').onclick = async () => {
+      if (!window.showDirectoryPicker) { folderError(new Error('Откройте страницу в Chrome или Edge по HTTPS или через localhost.')); return; }
+      try {
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'eva-project' });
+        const previous = await workspaceRecord('folder', 'readonly').catch(() => null);
+        const same = previous && await handle.isSameEntry(previous.handle);
+        const id = same ? previous.id : crypto.randomUUID();
+        await workspaceRecord('folder', 'readwrite', { id, handle }).catch(() => {});
+        await connectFolder(handle, id);
+      } catch (error) { if (error.name !== 'AbortError') folderError(error); }
+    };
+    async function refreshFolder() {
+      const root = folder;
+      if (!root || movingFolderItem) return;
+      try {
+        await renderFolder();
+        const file = active;
+        if (root !== folder || file?.folderId !== folderIdentity || file.dirty || !codeFiles.has(file.name)) return;
+        const code = await (await codeFiles.get(file.name).getFile()).text();
+        if (root !== folder || file.dirty || code === file.diskCode) return;
+        file.code = file.diskCode = code;
+        if (file === active) activate(file);
+        else persist();
+      } catch (error) { if (root === folder) folderError(error); }
+    }
+    $('refresh-folder').onclick = refreshFolder;
+    $('folder-root').onclick = refreshFolder;
+    window.addEventListener('focus', refreshFolder);
+    $('new-folder').onclick = async () => {
+      if (movingFolderItem) return;
+      const path = prompt('Имя или путь новой папки')?.trim();
+      if (!path) return;
+      if (!validPath(path)) { alert('Проверьте путь внутри папки.'); return; }
+      try {
+        await folderDirectory(folder, path.split('/'), true);
+        openDirectories.add(path);
+        await renderFolder();
+      } catch (error) { folderError(error); }
+    };
+
+    function queueDiskSave(file) {
+      const root = folder;
+      if (!root || file.folderId !== folderIdentity || movingFolderItem) return;
+      clearTimeout(diskTimers.get(file));
+      const pending = (diskWrites.get(file) ?? Promise.resolve()).then(async () => {
+        if (!files.includes(file) || !file.dirty) return;
+        const code = file.code;
+        const handle = await folderFile(root, file.name);
+        const current = await (await handle.getFile()).text();
+        if (!files.includes(file)) return;
+        if (current !== file.diskCode && current !== code) {
+          if (folder === root) {
+            folderError(new Error(`${file.name} изменён на диске. Правки остались во вкладке.`));
+            const copy = document.createElement('button');
+            copy.textContent = 'Скачать копию';
+            copy.onclick = () => download(file.name.split('/').at(-1), file.code, 'text/plain;charset=utf-8');
+            $('folder-label').append(' ', copy);
+          }
+          return;
+        }
+        if (current !== code) {
+          const writer = await handle.createWritable();
+          try { await writer.write(code); await writer.close(); }
+          catch (error) { await writer.abort().catch(() => {}); throw error; }
+        }
+        file.diskCode = code;
+        file.dirty = file.code !== code;
+        if (folder === root) $('folder-label').textContent = root.name;
+        renderTabs();
+        persist();
+      }).catch(error => { if (folder === root) folderError(error); });
+      diskWrites.set(file, pending);
+      return pending;
+    }
+
+    const vocabulary = {
+      python: ['def class return yield import from as for while in if elif else break continue try except finally with raise pass True False None and or not is lambda match case assert del global nonlocal async await', 'print input range len int float str bool list dict set tuple sorted sum min max abs round enumerate zip map filter open reversed all any isinstance type pow divmod bin hex ord chr format next iter enumerate', 'itertools ipaddress functools collections math turtle re sys statistics random string decimal fractions pathlib operator time datetime bisect heapq csv json'],
+      cpp: ['int float double char bool void auto const constexpr static class struct template typename namespace using return for while if else switch case break continue include public private new delete true false nullptr', 'std cout cin endl string vector array sort sort_heap getline map set pair unordered_map long size_t', 'iostream vector string algorithm cmath numeric limits iomanip'],
+      javascript: ['const let var function class return import export from async await if else for while of in new true false null undefined throw try catch switch case break continue', 'console log Math Number String Array Object Promise JSON Date Map Set parseInt parseFloat', '']
+    };
+    const pythonMembers = {
+      itertools: 'product permutations combinations combinations_with_replacement repeat chain count cycle accumulate groupby islice',
+      ipaddress: 'ip_network ip_address IPv4Network IPv4Address IPv6Network IPv6Address summarize_address_range',
+      functools: 'lru_cache cache reduce partial', math: 'sqrt floor ceil gcd lcm factorial comb perm pi inf log2',
+      turtle: 'forward backward left right goto penup pendown speed color pencolor width dot circle setheading position done Turtle'
+    };
+    let suggestionItems = [];
+    let suggestionIndex = 0;
+    let suggestionStart = 0;
+
+    function syncHighlight() {
+      $('highlight').scrollTop = editor.scrollTop;
+      $('highlight').scrollLeft = editor.scrollLeft;
+    }
+
+    function paintCode() {
+      const highlight = $('highlight');
+      highlight.replaceChildren();
+      const code = editor.value;
+      const mode = languageFor(active?.name ?? '');
+      if (!mode || code.length > 250000) { highlight.textContent = code + '\n'; syncHighlight(); return; }
+      const [keywords, builtins] = vocabulary[mode].map(words => new Set(words.split(' ')));
+      const tokens = mode === 'python'
+        ? /"""[\s\S]*?(?:"""|$)|'''[\s\S]*?(?:'''|$)|#[^\n]*|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?|\b(?:0[xX][\da-fA-F]+|\d+(?:\.\d+)?)\b|\b[a-zA-Z_]\w*\b/g
+        : /\/\*[\s\S]*?(?:\*\/|$)|\/\/[^\n]*|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?|`(?:\\.|[^`\\])*`?|\b(?:0[xX][\da-fA-F]+|\d+(?:\.\d+)?)\b|\b[a-zA-Z_]\w*\b/g;
+      const fragment = document.createDocumentFragment();
+      let offset = 0;
+      for (const match of code.matchAll(tokens)) {
+        const token = match[0];
+        const type = /^(#|\/\/|\/\*)/.test(token) ? 'comment' : /^["'`]/.test(token) ? 'string' : /^\d/.test(token) ? 'number' : keywords.has(token) ? 'key' : builtins.has(token) ? 'builtin' : '';
+        if (!type) continue;
+        fragment.append(code.slice(offset, match.index));
+        const span = document.createElement('span');
+        span.className = 'tok-' + type;
+        span.textContent = token;
+        fragment.append(span);
+        offset = match.index + token.length;
+      }
+      fragment.append(code.slice(offset) + '\n');
+      highlight.append(fragment);
+      syncHighlight();
+    }
+
+    function hideSuggestions() { $('suggestions').hidden = true; suggestionItems = []; }
+
+    function updateSuggestions(force = false) {
+      const mode = languageFor(active?.name ?? '');
+      if (!mode || editor.selectionStart !== editor.selectionEnd) { hideSuggestions(); return; }
+      const before = editor.value.slice(0, editor.selectionStart).split('\n').at(-1);
+      const prefix = before.match(/[a-zA-Z_]\w*$/)?.[0] ?? '';
+      const member = mode === 'python' && before.match(/\b(\w+)\.\w*$/)?.[1];
+      const fromModule = mode === 'python' && before.match(/^\s*from\s+(\w+)\s+import\s+/)?.[1];
+      if (!force && !member && prefix.length < 2) { hideSuggestions(); return; }
+      const inImport = /^\s*(?:from|import)\s+/.test(before);
+      let alias;
+      if (member) alias = [...editor.value.matchAll(/^\s*import\s+(\w+)\s+as\s+(\w+)/gm)].find(match => match[2] === member)?.[1];
+      const module = fromModule || alias || member;
+      let words = module ? pythonMembers[module] : inImport ? vocabulary[mode][2] : vocabulary[mode].join(' ');
+      if (typeof words !== 'string' || !words) { hideSuggestions(); return; }
+      if (!member && !inImport) words += ' ' + [...editor.value.matchAll(/\b(?:def|class|let|const|var)\s+([a-zA-Z_]\w*)/g)].slice(0, 100).map(match => match[1]).join(' ');
+      suggestionItems = [...new Set(words.split(/\s+/))].filter(word => word && word !== prefix && word.startsWith(prefix)).slice(0, 7);
+      if (!suggestionItems.length) { hideSuggestions(); return; }
+      suggestionIndex = 0;
+      suggestionStart = editor.selectionStart - prefix.length;
+      const box = $('suggestions');
+      box.replaceChildren();
+      for (const [index, word] of suggestionItems.entries()) {
+        const button = document.createElement('button');
+        button.textContent = word;
+        button.tabIndex = -1;
+        button.setAttribute('role', 'option');
+        button.setAttribute('aria-selected', index === 0);
+        button.onmousedown = event => event.preventDefault();
+        button.onclick = () => applySuggestion(index);
+        box.append(button);
+      }
+      box.hidden = false;
+    }
+
+    function applySuggestion(index) {
+      const word = suggestionItems[index];
+      const end = editor.selectionEnd + (editor.value.slice(editor.selectionEnd).match(/^\w+/)?.[0].length ?? 0);
+      editor.setSelectionRange(suggestionStart, end);
+      insertCode(word);
+      hideSuggestions();
+    }
+
+    function handleSuggestionKey(event) {
+      if (!suggestionItems.length) return false;
+      if (event.key === 'Escape') { hideSuggestions(); allowTabExit = true; return true; }
+      if ((event.key === 'Tab' || event.key === 'Enter') && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        event.preventDefault(); applySuggestion(suggestionIndex); return true;
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const count = suggestionItems.length;
+        suggestionIndex = (suggestionIndex + count + (event.key === 'ArrowDown' ? 1 : -1)) % count;
+        [...$('suggestions').children].forEach((button, index) => button.setAttribute('aria-selected', index === suggestionIndex));
+        return true;
+      }
+      if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) hideSuggestions();
+      return false;
+    }
+
     function pdfMessage(text) {
       $('pdf-message').textContent = text;
       $('pdf-message').hidden = !text;
@@ -309,7 +959,7 @@
 
     async function drawPdf(resetScroll = false) {
       const session = pdfSession;
-      if (!session?.document) return;
+      if (!session?.document || sidePanel !== 'pdf') return;
       session.render?.cancel();
       if (resetScroll) pdfView.scrollTo(0, 0);
       const revision = ++session.revision;
@@ -341,7 +991,11 @@
         if (current()) {
           const { scrollTop, scrollLeft } = pdfView;
           pdfView.replaceChildren(canvas);
-          pdfView.scrollTo(resetScroll ? 0 : scrollLeft, resetScroll ? 0 : scrollTop);
+          const position = session.restoreScroll ?? (resetScroll ? [0, 0] : [scrollLeft, scrollTop]);
+          session.restoreScroll = undefined;
+          pdfView.scrollTo(...position);
+          session.scroll = [pdfView.scrollLeft, pdfView.scrollTop];
+          scheduleSave();
         }
       } catch {
         if (current()) {
@@ -357,8 +1011,13 @@
       event.target.value = '';
       if (!file) return;
       if (!/\.pdf$/i.test(file.name)) { alert('Выберите файл с расширением .pdf.'); return; }
+      workspaceRecord('pdf', 'readwrite', file).catch(() => {});
+      await openPdf(file);
+    };
+
+    async function openPdf(file, initial) {
       releasePdf();
-      const session = { page: 1, zoom: 1, revision: 0 };
+      const session = { name: file.name, page: initial?.page ?? 1, zoom: initial?.zoom ?? 1, revision: 0, scroll: initial?.scroll ?? [0, 0], restoreScroll: initial?.scroll };
       pdfSession = session;
       pdfView.hidden = $('close-pdf').hidden = false;
       $('pdf-empty').hidden = $('pdf-tools').hidden = true;
@@ -372,25 +1031,31 @@
         const document = await session.loading.promise;
         if (session !== pdfSession) return;
         session.document = document;
+        session.page = Math.min(document.numPages, Math.max(1, session.page));
         $('pdf-page').max = document.numPages;
         $('pdf-total').textContent = ` / ${document.numPages}`;
         $('pdf-tools').hidden = false;
         drawPdf(true);
+        persist();
       } catch {
         if (session === pdfSession) pdfMessage('Не удалось открыть PDF. Проверьте файл и подключение к интернету.');
       }
-    };
+    }
     $('close-pdf').onclick = () => {
       releasePdf();
+      workspaceRecord('pdf', 'readwrite').catch(() => {});
+      persist();
       pdfView.hidden = $('close-pdf').hidden = $('pdf-tools').hidden = true;
       $('pdf-empty').hidden = false;
       $('pdf-name').textContent = '';
-      $('open-pdf').focus();
+      $('open-pdf').focus({ preventScroll: true });
     };
     function showPdfPage(page) {
       if (!pdfSession?.document) return;
       pdfSession.page = Math.min(pdfSession.document.numPages, Math.max(1, Math.trunc(page) || pdfSession.page));
+      pdfSession.scroll = [0, 0];
       drawPdf(true);
+      persist();
     }
     $('pdf-prev').onclick = () => showPdfPage(pdfSession.page - 1);
     $('pdf-next').onclick = () => showPdfPage(pdfSession.page + 1);
@@ -398,6 +1063,7 @@
     function setPdfZoom(zoom) {
       pdfSession.zoom = Math.min(3, Math.max(0.75, zoom));
       drawPdf();
+      persist();
     }
     $('pdf-plus').onclick = () => setPdfZoom(pdfSession.zoom + 0.25);
     $('pdf-minus').onclick = () => setPdfZoom(pdfSession.zoom - 0.25);
@@ -408,17 +1074,484 @@
       showPdfPage(pdfSession.page + (event.key === 'ArrowRight' ? 1 : -1));
     };
     new ResizeObserver(() => drawPdf()).observe(pdfView);
+    pdfView.addEventListener('scroll', () => {
+      if (!pdfSession?.document || sidePanel !== 'pdf' || pdfSession.restoreScroll) return;
+      pdfSession.scroll = [pdfView.scrollLeft, pdfView.scrollTop];
+      scheduleSave();
+    }, { passive: true });
+
+    function showSidePanel(panel) {
+      if (panel !== 'board') expandBoard(false);
+      if (panel !== sidePanel && pdfSession?.document) {
+        pdfSession.revision++;
+        pdfSession.render?.cancel();
+        if (sidePanel === 'pdf' && !pdfSession.restoreScroll) {
+          pdfSession.scroll = [pdfView.scrollLeft, pdfView.scrollTop];
+          pdfSession.restoreScroll = pdfSession.scroll;
+        }
+      }
+      sidePanel = panel;
+      $('pdf-panel').hidden = panel !== 'pdf';
+      $('board-panel').hidden = panel !== 'board';
+      $('show-pdf').setAttribute('aria-pressed', panel === 'pdf');
+      $('show-board').setAttribute('aria-pressed', panel === 'board');
+      if (panel === 'board') updateBoardView();
+      if (panel === 'pdf' && pdfSession?.document) drawPdf();
+      persist();
+    }
+
+    $('show-pdf').onclick = () => showSidePanel('pdf');
+    $('show-board').onclick = () => showSidePanel('board');
+    const board = $('board');
+    const boardViewport = $('board-viewport');
+    const boardContext = board.getContext('2d', { willReadFrequently: true });
+    const boardUndo = [];
+    const boardInstructions = 'Колесо — масштаб · Рука или пробел — перемещение · Ctrl+V — картинка';
+    let boardDrawing;
+    let boardTool = 'pen';
+    let boardLoaded = false;
+    let boardSaveRevision = 0;
+    let boardSaveQueue = Promise.resolve();
+    let boardPan;
+    let boardSpace = false;
+
+    function updateBoardView() {
+      const width = boardViewport.clientWidth;
+      const height = boardViewport.clientHeight;
+      if (!width || !height) return;
+      const scale = Math.min(width / board.width, height / board.height) * boardView.zoom;
+      const sheetWidth = board.width * scale;
+      const sheetHeight = board.height * scale;
+      const limitX = (width + sheetWidth) / 2 - Math.min(64, sheetWidth / 3);
+      const limitY = (height + sheetHeight) / 2 - Math.min(64, sheetHeight / 3);
+      boardView.x = Math.max(-limitX, Math.min(limitX, boardView.x));
+      boardView.y = Math.max(-limitY, Math.min(limitY, boardView.y));
+      board.style.width = `${sheetWidth}px`;
+      board.style.height = `${sheetHeight}px`;
+      board.style.transform = `translate(${(width - sheetWidth) / 2 + boardView.x}px, ${(height - sheetHeight) / 2 + boardView.y}px)`;
+      $('board-zoom').textContent = `${Math.round(boardView.zoom * 100)}%`;
+      $('board-zoom-out').disabled = boardView.zoom <= .25;
+      $('board-zoom-in').disabled = boardView.zoom >= 5;
+    }
+
+    function zoomBoard(factor, event) {
+      if (boardDrawing || boardPan) return;
+      const zoom = Math.min(5, Math.max(.25, boardView.zoom * factor));
+      const ratio = zoom / boardView.zoom;
+      const rect = boardViewport.getBoundingClientRect();
+      const x = event ? event.clientX - rect.left - rect.width / 2 : 0;
+      const y = event ? event.clientY - rect.top - rect.height / 2 : 0;
+      boardView.x = x - (x - boardView.x) * ratio;
+      boardView.y = y - (y - boardView.y) * ratio;
+      boardView.zoom = zoom;
+      updateBoardView();
+      scheduleSave();
+    }
+
+    function expandBoard(expanded) {
+      const panel = $('board-panel');
+      panel.classList.toggle('expanded', expanded);
+      $('board-expand').setAttribute('aria-pressed', expanded);
+      $('board-expand').setAttribute('aria-label', expanded ? 'Выйти из полноэкранного режима' : 'На всё окно');
+      $('board-expand').title = expanded ? 'Свернуть (Esc)' : 'На всё окно';
+      updateBoardView();
+    }
+
+    $('board-zoom-in').onclick = () => zoomBoard(1.25);
+    $('board-zoom-out').onclick = () => zoomBoard(.8);
+    $('board-zoom').onclick = () => { Object.assign(boardView, { zoom: 1, x: 0, y: 0 }); updateBoardView(); persist(); };
+    $('board-expand').onclick = () => expandBoard(!$('board-panel').classList.contains('expanded'));
+    new ResizeObserver(updateBoardView).observe(boardViewport);
+    boardViewport.addEventListener('wheel', event => {
+      event.preventDefault();
+      zoomBoard(Math.exp(-Math.sign(event.deltaY) * Math.min(Math.abs(event.deltaY), 100) * .004), event);
+    }, { passive: false });
+
+    function applyBoardSettings() {
+      board.style.background = $('board-background').value;
+      $('board-width-value').value = $('board-width').value;
+      $('board-pen').setAttribute('aria-pressed', boardTool === 'pen');
+      $('board-eraser').setAttribute('aria-pressed', boardTool === 'eraser');
+      $('board-hand').setAttribute('aria-pressed', boardTool === 'hand');
+      boardViewport.dataset.hand = boardTool === 'hand' || boardSpace;
+    }
+
+    function saveBoard() {
+      const revision = ++boardSaveRevision;
+      const settings = { background: $('board-background').value, color: $('board-color').value, width: $('board-width').value, tool: boardTool };
+      const snapshot = new Promise(resolve => board.toBlob(resolve, 'image/png'));
+      boardSaveQueue = boardSaveQueue.then(async () => {
+        const image = await snapshot;
+        if (revision !== boardSaveRevision) return;
+        if (!image) throw new Error('Холст недоступен для сохранения.');
+        await workspaceRecord('board', 'readwrite', { ...settings, image });
+        if (revision === boardSaveRevision) $('board-status').textContent = boardInstructions;
+      }).catch(() => {
+        if (revision === boardSaveRevision) $('board-status').textContent = 'Браузер не смог сохранить холст.';
+      });
+    }
+
+    function rememberBoard() {
+      boardUndo.push(boardContext.getImageData(0, 0, board.width, board.height));
+      if (boardUndo.length > 8) boardUndo.shift();
+      $('board-undo').disabled = false;
+    }
+
+    function boardPoint(event) {
+      const rect = board.getBoundingClientRect();
+      return [(event.clientX - rect.left) * board.width / rect.width, (event.clientY - rect.top) * board.height / rect.height];
+    }
+
+    function paintBoard(from, to, stroke) {
+      boardContext.save();
+      boardContext.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
+      boardContext.fillStyle = boardContext.strokeStyle = stroke.color;
+      boardContext.lineWidth = stroke.width;
+      boardContext.lineCap = 'round';
+      boardContext.beginPath();
+      if (!from) {
+        boardContext.arc(...to, stroke.width / 2, 0, Math.PI * 2);
+        boardContext.fill();
+      } else {
+        boardContext.moveTo(...from);
+        boardContext.lineTo(...to);
+        boardContext.stroke();
+      }
+      boardContext.restore();
+    }
+
+    board.onpointerdown = event => {
+      if (!boardLoaded || boardDrawing || boardPan || boardTool === 'hand' || boardSpace || event.button !== 0) return;
+      event.preventDefault();
+      board.focus({ preventScroll: true });
+      rememberBoard();
+      const point = boardPoint(event);
+      const width = Number($('board-width').value) * board.width * boardView.zoom / board.getBoundingClientRect().width;
+      boardDrawing = { id: event.pointerId, point, width, tool: boardTool, color: $('board-color').value };
+      board.setPointerCapture(event.pointerId);
+      paintBoard(null, point, boardDrawing);
+    };
+    board.onpointermove = event => {
+      if (boardDrawing?.id !== event.pointerId) return;
+      const points = event.getCoalescedEvents?.();
+      for (const item of points?.length ? points : [event]) {
+        const point = boardPoint(item);
+        paintBoard(boardDrawing.point, point, boardDrawing);
+        boardDrawing.point = point;
+      }
+    };
+    const finishBoardStroke = event => {
+      if (boardDrawing?.id !== event.pointerId) return;
+      boardDrawing = undefined;
+      saveBoard();
+    };
+    board.onpointerup = board.onpointercancel = board.onlostpointercapture = finishBoardStroke;
+    boardViewport.onpointerdown = event => {
+      if (boardDrawing || boardPan || !(event.button === 1 || event.button === 0 && (boardTool === 'hand' || boardSpace))) return;
+      event.preventDefault();
+      board.focus({ preventScroll: true });
+      boardPan = { id: event.pointerId, x: event.clientX - boardView.x, y: event.clientY - boardView.y };
+      boardViewport.setPointerCapture(event.pointerId);
+      boardViewport.dataset.panning = 'true';
+    };
+    boardViewport.onpointermove = event => {
+      if (boardPan?.id !== event.pointerId) return;
+      boardView.x = event.clientX - boardPan.x;
+      boardView.y = event.clientY - boardPan.y;
+      updateBoardView();
+    };
+    boardViewport.onpointerup = boardViewport.onpointercancel = boardViewport.onlostpointercapture = event => {
+      if (boardPan?.id !== event.pointerId) return;
+      boardPan = undefined;
+      delete boardViewport.dataset.panning;
+      scheduleSave();
+    };
+    board.onkeydown = event => {
+      if (event.code !== 'Space') return;
+      event.preventDefault();
+      boardSpace = true;
+      applyBoardSettings();
+    };
+    function releaseBoardSpace() { boardSpace = false; applyBoardSettings(); }
+    board.onblur = releaseBoardSpace;
+    window.addEventListener('keyup', event => { if (event.code === 'Space' && boardSpace) releaseBoardSpace(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && $('board-panel').classList.contains('expanded')) expandBoard(false); });
+    $('board-pen').onclick = () => { if (!boardLoaded) return; boardTool = 'pen'; applyBoardSettings(); saveBoard(); };
+    $('board-eraser').onclick = () => { if (!boardLoaded) return; boardTool = 'eraser'; applyBoardSettings(); saveBoard(); };
+    $('board-hand').onclick = () => { if (!boardLoaded) return; boardTool = 'hand'; applyBoardSettings(); saveBoard(); };
+    for (const id of ['board-width', 'board-color', 'board-background']) {
+      $(id).oninput = applyBoardSettings;
+      $(id).onchange = () => { if (boardLoaded) saveBoard(); };
+    }
+    $('board-undo').onclick = () => {
+      if (boardDrawing || !boardUndo.length) return;
+      boardContext.putImageData(boardUndo.pop(), 0, 0);
+      $('board-undo').disabled = boardUndo.length === 0;
+      saveBoard();
+    };
+
+    async function insertBoardImage(file, point) {
+      if (!file || !boardLoaded) return;
+      let image;
+      try {
+        image = await createImageBitmap(file);
+        rememberBoard();
+        const scale = Math.min(1, board.width * .78 / image.width, board.height * .78 / image.height);
+        const width = image.width * scale;
+        const height = image.height * scale;
+        const [x, y] = point ?? [board.width / 2, board.height / 2];
+        boardContext.drawImage(image, Math.max(0, Math.min(board.width - width, x - width / 2)), Math.max(0, Math.min(board.height - height, y - height / 2)), width, height);
+        saveBoard();
+      } catch { $('board-status').textContent = 'Не удалось открыть картинку.'; }
+      finally { image?.close(); }
+    }
+
+    $('board-image').onclick = () => $('board-file').click();
+    $('board-file').onchange = event => {
+      insertBoardImage(event.target.files[0]);
+      event.target.value = '';
+    };
+    board.ondragover = event => {
+      if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }
+    };
+    board.ondrop = event => {
+      if (!event.dataTransfer.types.includes('Files')) return;
+      event.preventDefault();
+      insertBoardImage([...event.dataTransfer.files].find(file => file.type.startsWith('image/')), boardPoint(event));
+    };
+    document.addEventListener('paste', event => {
+      if (sidePanel !== 'board' || event.target.closest?.('textarea, input, [contenteditable="true"]')) return;
+      const file = [...(event.clipboardData?.files ?? [])].find(file => file.type.startsWith('image/'));
+      if (file) { event.preventDefault(); insertBoardImage(file); }
+    });
+
+    async function restoreBoard() {
+      try {
+        const state = await workspaceRecord('board', 'readonly');
+        if (!state) return;
+        $('board-background').value = state.background;
+        $('board-color').value = state.color;
+        $('board-width').value = state.width;
+        boardTool = ['eraser', 'hand'].includes(state.tool) ? state.tool : 'pen';
+        if (state.image) {
+          const image = await createImageBitmap(state.image);
+          try { boardContext.drawImage(image, 0, 0); }
+          finally { image.close(); }
+        }
+      } catch { $('board-status').textContent = 'Холст не удалось восстановить из памяти браузера.'; }
+      finally { boardLoaded = true; applyBoardSettings(); }
+    }
+
+    const turtleSource = String.raw`
+from math import cos, sin, radians, degrees, atan2, ceil
+from eva_graphics import draw
+
+def _color(value):
+    if isinstance(value, str):
+        return value
+    scale = _color_mode
+    return 'rgb({},{},{})'.format(*(round(channel * 255 / scale) for channel in value))
+
+_color_mode = 1
+
+class Turtle:
+    def __init__(self, *args, **kwargs):
+        self._x = self._y = self._angle = 0
+        self._down = True
+        self._stroke, self._fill, self._width = 'black', 'black', 1
+        self._points = None
+
+    def forward(self, distance):
+        angle = radians(self._angle)
+        self.goto(self._x + distance * cos(angle), self._y + distance * sin(angle))
+
+    def backward(self, distance): self.forward(-distance)
+    def left(self, angle): self._angle = (self._angle + angle) % 360
+    def right(self, angle): self.left(-angle)
+    def setheading(self, angle): self._angle = angle % 360
+    def heading(self): return self._angle
+    def position(self): return (self._x, self._y)
+    def xcor(self): return self._x
+    def ycor(self): return self._y
+
+    def goto(self, x, y=None):
+        if y is None: x, y = x
+        if self._down: draw('line', self._x, self._y, x, y, self._stroke, self._width)
+        self._x, self._y = x, y
+        if self._points is not None: self._points.extend((x, y))
+
+    def setx(self, x): self.goto(x, self._y)
+    def sety(self, y): self.goto(self._x, y)
+    def home(self): self.goto(0, 0); self.setheading(0)
+    def penup(self): self._down = False
+    def pendown(self): self._down = True
+    def isdown(self): return self._down
+    def pensize(self, width=None):
+        if width is None: return self._width
+        self._width = width
+
+    def pencolor(self, *args):
+        if not args: return self._stroke
+        self._stroke = _color(args[0] if len(args) == 1 else args)
+
+    def fillcolor(self, *args):
+        if not args: return self._fill
+        self._fill = _color(args[0] if len(args) == 1 else args)
+
+    def color(self, *args):
+        if not args: return self._stroke, self._fill
+        if len(args) == 2: self.pencolor(args[0]); self.fillcolor(args[1])
+        else: self.pencolor(*args); self.fillcolor(*args)
+
+    def begin_fill(self): self._points = [self._x, self._y]
+    def end_fill(self):
+        if self._points:
+            draw('fill', self._fill, *self._points[:20000])
+        self._points = None
+
+    def dot(self, size=None, *color):
+        shade = _color(color[0] if len(color) == 1 else color) if color else self._stroke
+        draw('dot', self._x, self._y, size or max(self._width + 4, self._width * 2), shade)
+
+    def circle(self, radius, extent=360, steps=None):
+        extent = 360 if extent is None else extent
+        steps = max(1, steps if steps is not None else min(720, ceil(abs(extent) / 4)))
+        step = extent / steps
+        direction = 1 if radius >= 0 else -1
+        self.left(step * direction / 2)
+        for _ in range(steps):
+            self.forward(2 * abs(radius) * sin(radians(step / 2)))
+            self.left(step * direction)
+        self.right(step * direction / 2)
+
+    def towards(self, x, y=None):
+        if y is None: x, y = x
+        return degrees(atan2(y - self._y, x - self._x)) % 360
+
+    def clear(self): draw('clear')
+    def reset(self): self.clear(); self.__init__()
+    def speed(self, *args): return 0
+    def hideturtle(self): pass
+    def showturtle(self): pass
+    def get_screen(self): return _screen
+    getscreen = get_screen
+    fd, bk, back, lt, rt = forward, backward, backward, left, right
+    up, pu, down, pd, width = penup, penup, pendown, pendown, pensize
+    setpos, setposition, pos, seth, ht, st = goto, goto, position, setheading, hideturtle, showturtle
+
+class _Screen:
+    def bgcolor(self, *color):
+        if color: draw('background', _color(color[0] if len(color) == 1 else color))
+    def colormode(self, mode=None):
+        global _color_mode
+        if mode is not None: _color_mode = mode
+        return _color_mode
+    def setworldcoordinates(self, left, bottom, right, top): draw('world', left, bottom, right, top)
+    def screensize(self, *args): return (900, 600)
+    def setup(self, *args, **kwargs): pass
+    def tracer(self, *args): pass
+    def update(self): pass
+    def mainloop(self): pass
+    def exitonclick(self): pass
+    def title(self, *args): pass
+
+_screen, _turtle = _Screen(), Turtle()
+def Screen(): return _screen
+def getturtle(): return _turtle
+Pen = Turtle
+for _name in ('forward backward left right setheading heading position xcor ycor goto setx sety home penup pendown isdown pensize pencolor fillcolor color begin_fill end_fill dot circle towards clear reset speed hideturtle showturtle getscreen fd bk back lt rt up pu down pd width setpos setposition pos seth ht st').split():
+    globals()[_name] = getattr(_turtle, _name)
+for _name in ('bgcolor colormode setworldcoordinates screensize setup tracer update mainloop exitonclick title').split():
+    globals()[_name] = getattr(_screen, _name)
+done = mainloop
+__all__ = [name for name in globals() if not name.startswith('_') and name not in ('draw', 'sin', 'cos', 'atan2', 'ceil', 'radians', 'degrees')]
+`;
+
+    let turtleWorld;
+    function resetTurtle() {
+      const canvas = $('turtle-canvas');
+      canvas.style.background = 'white';
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      turtleWorld = null;
+    }
+
+    function renderTurtle(commands) {
+      const canvas = $('turtle-canvas');
+      const context = canvas.getContext('2d');
+      const panel = $('turtle-view');
+      if (panel.hidden) { panel.hidden = false; panel.open = true; }
+      const point = (x, y) => turtleWorld
+        ? [(x - turtleWorld[0]) * canvas.width / (turtleWorld[2] - turtleWorld[0]), (turtleWorld[3] - y) * canvas.height / (turtleWorld[3] - turtleWorld[1])]
+        : [canvas.width / 2 + x, canvas.height / 2 - y];
+      for (const [operation, ...args] of commands) {
+        if (operation === 'line') {
+          const [x, y, endX, endY, color, width] = args;
+          context.beginPath(); context.moveTo(...point(x, y)); context.lineTo(...point(endX, endY));
+          context.strokeStyle = color; context.lineWidth = width; context.stroke();
+        } else if (operation === 'dot') {
+          const [x, y, diameter, color] = args;
+          if (diameter <= 0) continue;
+          context.beginPath(); context.arc(...point(x, y), diameter / 2, 0, Math.PI * 2);
+          context.fillStyle = color; context.fill();
+        } else if (operation === 'fill') {
+          const [color, x, y, ...points] = args;
+          context.beginPath(); context.moveTo(...point(x, y));
+          for (let i = 0; i < points.length; i += 2) context.lineTo(...point(points[i], points[i + 1]));
+          context.closePath(); context.fillStyle = color; context.fill();
+        } else if (operation === 'world') turtleWorld = args;
+        else if (operation === 'background') canvas.style.background = args[0];
+        else if (operation === 'clear') context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
 
     function pythonWorker() {
       const base = 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/';
       const send = (type, message) => self.postMessage({ type, message });
       let runtime;
+      let drawCommand;
+      let localCoreInstalled = false;
+      function installLocalCore(core) {
+        const fetchNetwork = self.fetch.bind(self);
+        const importNetwork = self.importScripts.bind(self);
+        const types = { 'pyodide.asm.wasm': 'application/wasm', 'python_stdlib.zip': 'application/zip', 'pyodide-lock.json': 'application/json' };
+        const asset = url => typeof url === 'string' && url.startsWith(base) ? url.slice(base.length) : '';
+        function decode(encoded) {
+          if (Uint8Array.fromBase64) return Uint8Array.fromBase64(encoded);
+          const binary = atob(encoded);
+          const bytes = new Uint8Array(binary.length);
+          for (let index = 0; index < bytes.length; index++) bytes[index] = binary.charCodeAt(index);
+          return bytes;
+        }
+        self.fetch = (input, options) => {
+          const name = asset(typeof input === 'string' ? input : input.url ?? input.href);
+          if (!Object.hasOwn(types, name)) return fetchNetwork(input, options);
+          return Promise.resolve(new Response(decode(core[name]), { headers: { 'Content-Type': types[name] } }));
+        };
+        self.importScripts = (...urls) => {
+          for (const url of urls) {
+            const name = asset(url);
+            if (name !== 'pyodide.js' && name !== 'pyodide.asm.js') { importNetwork(url); continue; }
+            const localUrl = URL.createObjectURL(new Blob([decode(core[name])], { type: 'text/javascript' }));
+            try { importNetwork(localUrl); }
+            finally { URL.revokeObjectURL(localUrl); }
+          }
+        };
+        localCoreInstalled = true;
+      }
       self.onmessage = async ({ data }) => {
-        const { name, sources, stdin } = data;
+        const { name, sources, stdin, turtleSource, pythonCore } = data;
         const answers = stdin ? stdin.replace(/\r\n/g, '\n').split('\n') : [];
         let line = 0;
         let outputCount = 0;
         let outputSize = 0;
+        let drawCount = 0;
+        let drawing = [];
+        function flushDrawing() { if (drawing.length) { send('drawing', drawing); drawing = []; } }
+        drawCommand = (...command) => {
+          if (drawCount++ < 25000) drawing.push(command);
+          else if (drawCount === 25001) send('notice', 'Достигнут лимит команд turtle.');
+          if (drawing.length >= 128) flushDrawing();
+        };
         function stream(type, value) {
           if (outputCount >= 1000 || outputSize >= 120000) return;
           const text = value.slice(0, Math.min(4000, 120000 - outputSize));
@@ -430,8 +1563,18 @@
         try {
           if (!runtime) {
             send('status', 'Загрузка Python…');
-            importScripts(base + 'pyodide.js');
-            runtime = await loadPyodide({ indexURL: base });
+            if (pythonCore && !localCoreInstalled) installLocalCore(pythonCore);
+            let failure;
+            const origins = localCoreInstalled ? [base] : [base, 'https://cdn.jsdelivr.net/npm/pyodide@0.27.7/', 'https://unpkg.com/pyodide@0.27.7/'];
+            for (const origin of origins) {
+              try {
+                importScripts(origin + 'pyodide.js');
+                runtime = await loadPyodide({ indexURL: origin });
+                break;
+              } catch (error) { failure = error; }
+            }
+            if (!runtime) throw new Error(`Не удалось загрузить Python. Проверьте, что runtime/pyodide-core.js лежит рядом с index.html в папке runtime. ${failure}`);
+            runtime.registerJsModule('eva_graphics', { draw: (...command) => drawCommand(...command) });
           }
           runtime.setStdout({ batched: value => stream('text', value) });
           runtime.setStderr({ batched: value => stream('error', value) });
@@ -440,32 +1583,67 @@
 import importlib, os, runpy, shutil, sys
 os.chdir('/')
 for module_name, module in list(sys.modules.items()):
-    if str(getattr(module, '__file__', '')).startswith('/eva-workspace/'):
+    if str(getattr(module, '__file__', '')).startswith(('/eva-workspace/', '/eva-libraries/')):
         sys.modules.pop(module_name, None)
 shutil.rmtree('/eva-workspace', ignore_errors=True)
 os.mkdir('/eva-workspace')
 os.chdir('/eva-workspace')
 if '/eva-workspace' not in sys.path:
     sys.path.insert(0, '/eva-workspace')
+if '/eva-libraries' not in sys.path:
+    sys.path.insert(1, '/eva-libraries')
+os.makedirs('/eva-libraries', exist_ok=True)
 sys.path_importer_cache.pop('/eva-workspace', None)
 importlib.invalidate_caches()
 `);
-          for (const file of sources) runtime.FS.writeFile('/eva-workspace/' + file.name, file.code);
-          send('status', 'Подготовка библиотек…');
+          runtime.FS.writeFile('/eva-libraries/turtle.py', turtleSource);
           for (const file of sources) {
-            try { await runtime.loadPackagesFromImports(file.code); }
-            catch (error) {
-              if (file.name === name || !String(error).includes('SyntaxError:')) throw error;
-            }
+            const path = '/eva-workspace/' + file.name;
+            runtime.FS.mkdirTree(path.slice(0, path.lastIndexOf('/')));
+            runtime.FS.writeFile(path, file.code);
           }
+          send('status', 'Подготовка библиотек…');
+          const byPath = new Map(sources.map(file => [file.name, file]));
+          const pendingImports = [byPath.get(name)];
+          const inspected = new Set();
+          const codeTools = runtime.pyimport('pyodide.code');
+          try {
+            for (const file of pendingImports) {
+              if (!file || inspected.has(file.name)) continue;
+              inspected.add(file.name);
+              let modules;
+              try {
+                await runtime.loadPackagesFromImports(file.code);
+                modules = codeTools.find_imports(file.code);
+              } catch (error) {
+                if (file.name !== name && String(error).includes('SyntaxError:')) continue;
+                throw error;
+              }
+              try {
+                const parent = file.name.slice(0, file.name.lastIndexOf('/') + 1);
+                for (const module of modules.toJs()) {
+                  for (const prefix of new Set([parent, ''])) {
+                    const direct = byPath.get(prefix + module + '.py');
+                    if (direct) pendingImports.push(direct);
+                    const packagePath = prefix + module + '/';
+                    for (const candidate of sources) {
+                      if (candidate.name.startsWith(packagePath) && candidate.name.endsWith('.py')) pendingImports.push(candidate);
+                    }
+                  }
+                }
+              } finally { modules.destroy(); }
+            }
+          } finally { codeTools.destroy(); }
           send('status', `Выполняется ${name}…`);
           const launchGlobals = runtime.runPython('dict()');
           try {
             launchGlobals.set('script_path', '/eva-workspace/' + name);
-            runtime.runPython('import runpy\nrunpy.run_path(script_path, run_name="__main__");', { globals: launchGlobals });
+            runtime.runPython('import os, runpy, sys\nscript_dir = os.path.dirname(script_path)\nsys.path.insert(0, script_dir)\ntry:\n    runpy.run_path(script_path, run_name="__main__")\nexcept SystemExit as error:\n    if error.code not in (0, None):\n        raise\nfinally:\n    if script_dir in sys.path:\n        sys.path.remove(script_dir)\nNone', { globals: launchGlobals });
           } finally { launchGlobals.destroy(); }
+          flushDrawing();
           send('done', 'Выполнено');
         } catch (error) {
+          flushDrawing();
           send('error', String(error));
           send('done', 'Ошибка запуска');
         }
@@ -473,6 +1651,7 @@ importlib.invalidate_caches()
     }
 
     function writeOutput(message, style = '') {
+      const follow = output.scrollHeight - output.scrollTop - output.clientHeight < 20;
       const text = message.slice(0, 4000);
       log.push({ text, style });
       logSize += text.length;
@@ -484,14 +1663,15 @@ importlib.invalidate_caches()
       line.className = style;
       line.textContent = text || '\u00a0';
       output.append(line);
-      output.scrollTop = output.scrollHeight;
+      if (follow) output.scrollTop = output.scrollHeight;
       scheduleSave();
     }
 
     function setBusy(value, status) {
       busy = value;
+      $('header-logo').classList.toggle('eva-loader', busy);
       $('status').textContent = status;
-      $('run').disabled = busy || !active;
+      $('run').disabled = busy || !active || !runnable(active);
       $('stop').disabled = !busy;
       if (!busy) clearTimeout(runTimer);
       persist();
@@ -499,26 +1679,209 @@ importlib.invalidate_caches()
 
     function stopRun(message, status, style = 'muted') {
       if (!busy) return;
+      runRevision++;
       worker?.terminate();
       worker = undefined;
       writeOutput(message, style);
       setBusy(false, status);
     }
 
-    function run() {
-      if (busy || !active) return;
+    function runnable(file) { return /\.(py|cpp|cc|cxx|js|mjs)$/i.test(file.name); }
+
+    let localPython;
+    function loadLocalPython() {
+      if (!localPython) {
+        localPython = new Promise(resolve => {
+          const script = document.createElement('script');
+          script.src = './runtime/pyodide-core.js';
+          script.onload = () => { script.remove(); resolve(globalThis.EVA_PYODIDE_CORE); };
+          script.onerror = () => { script.remove(); localPython = undefined; resolve(undefined); };
+          document.head.append(script);
+        });
+      }
+      return localPython;
+    }
+
+    async function sourceSnapshot(file) {
+      const opened = files.filter(entry => entry.folderId === file.folderId);
+      const source = new Map();
+      if (folder && file.folderId === folderIdentity && languageFor(file.name) !== 'javascript') {
+        await renderFolder();
+        const entries = [...codeFiles];
+        for (const [name, handle] of entries) source.set(name, await (await handle.getFile()).text());
+      }
+      for (const entry of opened) {
+        if (entry === file || entry.dirty || !entry.folderId || !source.has(entry.name)) source.set(entry.name, entry.code);
+      }
+      return [...source].map(([name, code]) => ({ name, code }));
+    }
+
+    function javascriptWorker() {
+      self.onmessage = async ({ data }) => {
+        let count = 0;
+        const send = (type, message) => self.postMessage({ type, message });
+        const write = type => (...values) => {
+          if (count++ >= 1000) return;
+          const text = values.map(value => {
+            if (typeof value !== 'object') return String(value);
+            try { return JSON.stringify(value) ?? String(value); } catch { return String(value); }
+          }).join(' ');
+          send(type, text.slice(0, 4000));
+          if (count === 1000) send('notice', 'Достигнут лимит вывода за запуск.');
+        };
+        console.log = console.info = write('text');
+        console.warn = console.error = write('error');
+        const input = data.stdin ? data.stdin.split(/\r?\n/) : [];
+        self.prompt = (message = '') => { if (message) console.log(message); return input.shift() ?? null; };
+        const source = data.sources.find(file => file.name === data.name).code;
+        const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+        try { await import(url); send('done', 'Выполнено'); }
+        catch (error) { send('error', String(error.stack ?? error)); send('done', 'Ошибка запуска'); }
+        finally { URL.revokeObjectURL(url); }
+      };
+    }
+
+    function workerFrame() {
+      window.addEventListener('message', event => {
+        if (event.source !== parent || !event.ports[0]) return;
+        const port = event.ports[0];
+        const url = URL.createObjectURL(new Blob([event.data], { type: 'text/javascript' }));
+        try {
+          const child = new Worker(url);
+          child.onmessage = ({ data }) => port.postMessage({ data });
+          child.onerror = event => { event.preventDefault(); port.postMessage({ error: event.message }); };
+          child.onmessageerror = () => port.postMessage({ invalid: true });
+          port.onmessage = ({ data }) => child.postMessage(data);
+        } catch (error) {
+          port.postMessage({ error: String(error) });
+        } finally { URL.revokeObjectURL(url); }
+      }, { once: true });
+    }
+
+    function createIsolatedWorker(entry) {
+      const frame = document.createElement('iframe');
+      frame.hidden = true;
+      frame.setAttribute('sandbox', 'allow-scripts');
+      frame.srcdoc = `<script>(${workerFrame.toString()})();<\/script>`;
+      const channel = new MessageChannel();
+      const isolated = {
+        postMessage: data => channel.port1.postMessage(data),
+        terminate() { channel.port1.close(); frame.remove(); }
+      };
+      channel.port1.onmessage = ({ data: result }) => {
+        if (Object.hasOwn(result, 'error')) isolated.onerror?.({ message: result.error, preventDefault() {} });
+        else if (result.invalid) isolated.onmessageerror?.();
+        else isolated.onmessage?.({ data: result.data });
+      };
+      frame.onload = () => frame.contentWindow.postMessage(`(${entry.toString()})();`, '*', [channel.port2]);
+      document.body.append(frame);
+      return isolated;
+    }
+
+    async function enableCppIsolation() {
+      if (crossOriginIsolated) return true;
+      if (!navigator.serviceWorker || !/^https?:$/.test(location.protocol)) {
+        throw new Error('Для C++ откройте EVA Compiler по HTTPS или через локальный сервер (localhost).');
+      }
+      if (navigator.serviceWorker.controller) throw new Error('Браузер не включил изоляцию для C++. Попробуйте открыть страницу в отдельной вкладке Chrome или Edge.');
+      await navigator.serviceWorker.register('./cpp-isolation.js');
+      if (!navigator.serviceWorker.controller) {
+        await new Promise((resolve, reject) => {
+          const finish = () => { clearTimeout(timer); resolve(); };
+          const timer = setTimeout(() => {
+            navigator.serviceWorker.removeEventListener('controllerchange', finish);
+            reject(new Error('Не удалось запустить подготовку C++ в браузере.'));
+          }, 10000);
+          navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
+        });
+      }
+      return false;
+    }
+
+    function createCppRunner() {
+      let runtime;
+      let disposed = false;
+      const runner = {
+        terminate() { disposed = true; runtime?.dispose(); },
+        async postMessage({ name, sources, stdin }) {
+          const send = (type, message) => { if (!disposed) runner.onmessage?.({ data: { type, message } }); };
+          const decoder = new TextDecoder();
+          let remaining = 120000;
+          let chunks = 0;
+          const staged = [];
+          const stream = type => bytes => {
+            if (remaining <= 0 || chunks >= 1000) return;
+            const text = decoder.decode(bytes).slice(0, remaining);
+            remaining -= text.length;
+            chunks++;
+            if (text) send(type, text.trimEnd());
+            if (remaining <= 0 || chunks === 1000) send('notice', 'Достигнут лимит вывода за запуск.');
+          };
+          try {
+            if (!runtime) {
+              send('status', 'Загрузка компилятора C++…');
+              const { createEmception } = await import('./runtime/cpp-runtime.js');
+              if (disposed) return;
+              runtime = await createEmception({ tty: 'none' });
+              if (disposed) { runtime.dispose(); return; }
+            }
+            const cwd = '/home/user/eva-' + crypto.randomUUID();
+            const encoder = new TextEncoder();
+            for (const source of sources) {
+              if (!validPath(source.name)) continue;
+              const path = `${cwd}/${source.name}`;
+              await runtime.workspace.writeFile(path, encoder.encode(source.code));
+              staged.push(path);
+              if (disposed) return;
+            }
+            send('status', `Компилируется ${name}…`);
+            const result = await runtime.compileAndRun(undefined, {
+              cwd, sources: [`${cwd}/${name}`], stdin: stdin || 'none', stdout: stream('text'), stderr: stream('error')
+            });
+            send('done', result.exitCode === 0 ? 'Выполнено' : `C++ завершился с кодом ${result.exitCode}`);
+          } catch (error) {
+            send('error', String(error));
+            send('done', 'Ошибка запуска C++');
+          } finally {
+            if (!disposed) await Promise.allSettled(staged.map(path => runtime.workspace.deleteFile(path)));
+          }
+        }
+      };
+      return runner;
+    }
+
+    async function run() {
+      if (busy || movingFolderItem || !active || !runnable(active)) return;
+      const file = active;
+      const mode = languageFor(file.name);
+      const revision = ++runRevision;
       if (log.length === 0) output.replaceChildren();
-      writeOutput(`▶ ${new Date().toLocaleString('ru-RU')} · ${active.name}`, 'muted');
-      setBusy(true, 'Подготовка Python…');
+      writeOutput(`▶ ${new Date().toLocaleString('ru-RU')} · ${file.name}`, 'muted');
+      resetTurtle();
+      setBusy(true, 'Подготовка запуска…');
       runTimer = setTimeout(() => stopRun('Запуск остановлен по тайм-ауту (2 минуты).', 'Тайм-аут', 'error'), 120000);
       try {
+        if (mode === 'cpp' && !await enableCppIsolation()) {
+          if (revision !== runRevision) return;
+          try { sessionStorage.setItem('eva-resume-cpp', JSON.stringify({ name: file.name, folderId: file.folderId })); } catch {}
+          writeOutput('Компилятор C++ подключён. Обновляем страницу с сохранением позиции.', 'muted');
+          setBusy(false, 'Компилятор C++ подключён');
+          location.reload();
+          return;
+        }
+        const needsPythonCore = mode === 'python' && (!worker || workerLanguage !== 'python');
+        const [sources, pythonCore] = await Promise.all([sourceSnapshot(file), needsPythonCore ? loadLocalPython() : undefined]);
+        if (revision !== runRevision) return;
+        if (worker && (workerLanguage !== mode || mode === 'javascript')) { worker.terminate(); worker = undefined; }
         if (!worker) {
-          const url = URL.createObjectURL(new Blob([`(${pythonWorker.toString()})();`], { type: 'text/javascript' }));
-          try { worker = new Worker(url); }
-          finally { URL.revokeObjectURL(url); }
+          if (mode === 'cpp') worker = createCppRunner();
+          else worker = createIsolatedWorker(mode === 'python' ? pythonWorker : javascriptWorker);
+          workerLanguage = mode;
           const runningWorker = worker;
           worker.onmessage = ({ data: { type, message } }) => {
-            if (worker !== runningWorker || !busy || typeof message !== 'string') return;
+            if (worker !== runningWorker || !busy) return;
+            if (type === 'drawing' && Array.isArray(message)) { renderTurtle(message); return; }
+            if (typeof message !== 'string') return;
             if (type === 'done') {
               writeOutput(message, 'muted');
               setBusy(false, message);
@@ -528,15 +1891,15 @@ importlib.invalidate_caches()
           };
           worker.onerror = event => {
             event.preventDefault();
-            if (worker === runningWorker) stopRun(event.message || 'Сбой среды Python.', 'Сбой Python', 'error');
+            if (worker === runningWorker) stopRun(event.message || 'Сбой среды выполнения.', 'Сбой запуска', 'error');
           };
           worker.onmessageerror = () => {
-            if (worker === runningWorker) stopRun('Не удалось получить результат от Python.', 'Сбой Python', 'error');
+            if (worker === runningWorker) stopRun('Не удалось получить результат программы.', 'Сбой запуска', 'error');
           };
         }
-        worker.postMessage({ name: active.name, sources: files.map(({ name, code }) => ({ name, code })), stdin: $('stdin').value });
+        worker.postMessage({ name: file.name, sources, stdin: $('stdin').value, turtleSource: mode === 'python' ? turtleSource : '', pythonCore });
       } catch (error) {
-        stopRun(String(error), 'Ошибка запуска', 'error');
+        if (revision === runRevision) stopRun(String(error), 'Ошибка запуска', 'error');
       }
     }
     $('run').onclick = run;
@@ -552,7 +1915,9 @@ importlib.invalidate_caches()
     };
     $('help').onclick = () => $('tips').showModal();
     document.addEventListener('keydown', event => {
-      if ((!event.ctrlKey && !event.metaKey) || $('tips').open) return;
+      if ($('tips').open) return;
+      if (event.key === 'F5') { event.preventDefault(); if (!event.repeat) run(); return; }
+      if (!event.ctrlKey && !event.metaKey) return;
       if (event.key.toLowerCase() === 's') { event.preventDefault(); save(); }
       if (event.key === 'Enter') { event.preventDefault(); run(); }
     });
@@ -561,6 +1926,30 @@ importlib.invalidate_caches()
       if (storageFailed && files.some(file => file.dirty)) { event.preventDefault(); event.returnValue = ''; }
     });
     window.addEventListener('pagehide', persist);
+    window.addEventListener('scroll', () => {
+      if (restoringScroll) return;
+      pageScroll = [window.scrollX, window.scrollY];
+      scheduleSave();
+    }, { passive: true });
+    output.addEventListener('scroll', scheduleSave, { passive: true });
+    $('stdin').parentElement.addEventListener('toggle', scheduleSave);
+    $('stdin').parentElement.open = Boolean(restored?.inputOpen);
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    $('theme').value = ['dark', 'light', 'blue'].includes(restored?.theme) ? restored.theme : 'dark';
+    document.documentElement.dataset.editorTheme = $('theme').value;
+    $('theme').onchange = () => { document.documentElement.dataset.editorTheme = $('theme').value; persist(); };
+    $('background-toggle').checked = restored?.backgroundMotion !== false;
+    $('background-motion').hidden = !$('background-toggle').checked;
+    $('background-toggle').onchange = () => { $('background-motion').hidden = !$('background-toggle').checked; persist(); };
+    $('code-palette').value = ['eva', 'neon', 'pastel', 'amber'].includes(restored?.palette) ? restored.palette : 'eva';
+    document.documentElement.dataset.codePalette = $('code-palette').value;
+    $('code-palette').onchange = () => { document.documentElement.dataset.codePalette = $('code-palette').value; persist(); };
+    $('language').onchange = () => {
+      language = $('language').value;
+      const matching = files.find(file => languageFor(file.name) === language && runnable(file) && (!file.folderId || file.folderId === folderIdentity));
+      const starter = { python: 'print("Привет от ЕВА!")\n', cpp: '#include <iostream>\n\nint main() {\n    std::cout << "Hello from EVA!\\n";\n}\n', javascript: 'console.log("Привет от ЕВА!");\n' };
+      activate(matching ?? addFile('main' + languages[language], starter[language]), false);
+    };
     if (typeof restored?.stdin === 'string') $('stdin').value = restored.stdin;
     if (Array.isArray(restored?.log) && restored.log.length) {
       output.replaceChildren();
@@ -574,6 +1963,48 @@ importlib.invalidate_caches()
       $('status').textContent = 'Предыдущий запуск прерван';
     }
     activate(active);
+    showSidePanel(sidePanel);
+    restoreBoard();
+    requestAnimationFrame(() => {
+      output.scrollTop = restored?.outputScroll ?? output.scrollTop;
+      const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (pageScroll[1] > maxScrollY + window.innerHeight) pageScroll = [0, 0];
+      window.scrollTo(...pageScroll);
+      restoringScroll = false;
+    });
+    if (restored?.pdf && window.indexedDB) {
+      workspaceRecord('pdf', 'readonly').then(file => {
+        if (file?.name === restored.pdf.name && !pdfSession) return openPdf(file, restored.pdf);
+      }).catch(() => {});
+    }
+    const restoreFolder = window.showDirectoryPicker && window.indexedDB
+      ? workspaceRecord('folder', 'readonly').then(async record => {
+        if (!record || folder) return;
+        if (await record.handle.queryPermission({ mode: 'readwrite' }) === 'granted') await connectFolder(record.handle, record.id);
+        else {
+          $('folder-label').textContent = `${record.handle.name} · подтвердите доступ`;
+          $('open-folder').textContent = 'Подключить папку';
+          const pick = $('open-folder').onclick;
+          $('open-folder').onclick = async () => {
+            try {
+              if (await record.handle.requestPermission({ mode: 'readwrite' }) !== 'granted') { $('open-folder').onclick = pick; $('open-folder').textContent = 'Открыть папку'; return; }
+              $('open-folder').onclick = pick;
+              $('open-folder').textContent = 'Открыть папку';
+              await connectFolder(record.handle, record.id);
+            } catch (error) { folderError(error); }
+          };
+        }
+      }).catch(folderError) : Promise.resolve();
+    if (crossOriginIsolated) {
+      let resume;
+      try {
+        resume = JSON.parse(sessionStorage.getItem('eva-resume-cpp'));
+        sessionStorage.removeItem('eva-resume-cpp');
+      } catch {}
+      if (resume) restoreFolder.then(() => requestAnimationFrame(() => {
+        if (active?.name === resume.name && active.folderId === resume.folderId) run();
+      }));
+    }
   </script>
 </body>
 </html>
